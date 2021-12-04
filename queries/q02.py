@@ -1,7 +1,7 @@
 import ibis
 
 
-def tpch_q02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
+def query_tpch_q02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
     part = con.table("part")
     supplier = con.table("supplier")
     partsupp = con.table("partsupp")
@@ -45,7 +45,7 @@ def tpch_q02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
 
     return q.sort_by(
                 [
-                    q.S_ACCTBAL,
+                    ibis.desc(q.S_ACCTBAL),
                     q.N_NAME,
                     q.S_NAME,
                     q.P_PARTKEY,

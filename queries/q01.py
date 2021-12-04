@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 
 
-def tpch_q01(con, DELTA=90):
+def query_tpch_q01(con, DELTA=90):
     '''
     The Pricing Summary Report Query provides a summary pricing report for all
     lineitems shipped as of a given date.  The  date is  within  60  - 120 days
