@@ -32,4 +32,5 @@ WHERE p_partkey = ps_partkey
 ORDER BY s_acctbal DESC,
          n_name,
          s_name,
-         p_partkey;
+         p_partkey
+;

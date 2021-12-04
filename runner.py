@@ -10,7 +10,12 @@ import ibis
 def main(dbfn, qid='q01'):
     pycode = open(f'queries/{qid}.py').read()
 
-    exec(pycode, globals())
+    try:
+        exec(pycode, globals())
+    except Exception as e:
+        import traceback
+        traceback.print_exception(e, file=sys.stderr)
+
     func = globals()[f'tpch_{qid}']
 
     con = ibis.sqlite.connect(dbfn)
