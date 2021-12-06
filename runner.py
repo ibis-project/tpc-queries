@@ -32,13 +32,13 @@ def run(queryfn, db, outsql, outrepr, outjson):
     for func in queries:
         q = func(con)
 
-        print(repr(q), file=outrepr)
+        print(repr(q), file=outrepr, flush=True)
 
         sql = sqlparse.format(str(q.compile()),
                               reindent=True,
                               keyword_case='upper')
 
-        print(sql, file=outsql)
+        print(sql, file=outsql, flush=True)
 
         r = q.execute()
         print(r.to_json(orient='records'), file=outjson)

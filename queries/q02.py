@@ -13,7 +13,7 @@ def query_tpch_q02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
         .join(supplier, supplier.S_SUPPKEY == partsupp.PS_SUPPKEY)
         .join(nation, supplier.S_NATIONKEY == nation.N_NATIONKEY)
         .join(region, nation.N_REGIONKEY == region.R_REGIONKEY)
-    )
+    ).materialize()
 
     subexpr = (
         partsupp.join(supplier, supplier.S_SUPPKEY == partsupp.PS_SUPPKEY)
@@ -24,10 +24,10 @@ def query_tpch_q02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
     conditional_min = subexpr[region.R_NAME == REGION].PS_SUPPLYCOST.min()
 
     filters = [
-        part.P_SIZE == SIZE,
-        part.P_TYPE.like("%"+TYPE),
-        region.R_NAME == REGION,
-        partsupp.PS_SUPPLYCOST == conditional_min,
+        expr.P_SIZE == SIZE,
+        expr.P_TYPE.like("%"+TYPE),
+        expr.R_NAME == REGION,
+        expr.PS_SUPPLYCOST == conditional_min,
     ]
     q = expr.filter(filters)
     q = q.select([
