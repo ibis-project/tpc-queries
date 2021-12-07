@@ -1,16 +1,34 @@
+# Usage: make output/q02.diff
+
 DB ?= tpch.db
+OUTDIR=output
 
-SQL_QUERIES= $(wildcard queries/*.sql)
-PY_QUERIES= $(wildcard queries/*.py)
+SQL_OUTS=$(patsubst queries/%.sql,${OUTDIR}/%-sql.jsonl, $(wildcard queries/*.sql))
+PY_OUTS=$(patsubst queries/%.py,${OUTDIR}/%-py.jsonl, $(wildcard queries/*.py))
 
-all: golden-py
+TPCH_DIFFS=$(patsubst queries/%.sql,${OUTDIR}/%.diff, $(wildcard queries/*.sql))
 
-golden-sql: $(SQL_QUERIES:.sql=-sql.json)
+all: golden-diffs
 
-golden-py: $(PY_QUERIES:.py=-py.json)
+golden-diffs: $(TPCH_DIFFS)
+golden-sql: $(SQL_OUTS)
+golden-py: $(PY_OUTS)
 
-%-sql.json: %.sql init.sql
+${OUTDIR}/%.diff: ${OUTDIR}/%-sql.jsonl ${OUTDIR}/%-py.jsonl
+	-diff $^ > $@
+
+${OUTDIR}/%-sql.json: queries/%.sql init.sql
+	@mkdir -p ${OUTDIR}
 	cat $< | sqlite3 -init init.sql ${DB} > $@
 
-%-py.json: %.py runner.py
-	./runner.py --db ${DB} --outjson $@ $<
+${OUTDIR}/%-py.json: queries/%.py runner.py
+	@mkdir -p ${OUTDIR}
+	./runner.py --db ${DB} --outjson $@ --outsql ${OUTDIR}/`basename $<`.sql --outrepr ${OUTDIR}/`basename $<`.repr $<
+
+%.jsonl: %.json
+	cat $< | jq -S -c '.[]' > $@
+
+clean:
+	rm -rf ${OUTDIR}/
+
+.PHONY: clean
