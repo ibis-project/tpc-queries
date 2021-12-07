@@ -19,11 +19,11 @@ ${OUTDIR}/%.diff: ${OUTDIR}/%-sql.jsonl ${OUTDIR}/%-py.jsonl
 
 ${OUTDIR}/%-sql.json: queries/%.sql init.sql
 	@mkdir -p ${OUTDIR}
-	cat $< | sqlite3 -init init.sql ${DB} > $@
+	cat $< | time sqlite3 -init init.sql ${DB} > $@
 
 ${OUTDIR}/%-py.json: queries/%.py runner.py
 	@mkdir -p ${OUTDIR}
-	./runner.py --db ${DB} --outjson $@ --outsql ${OUTDIR}/`basename $<`.sql --outrepr ${OUTDIR}/`basename $<`.repr $<
+	time ./runner.py --db ${DB} --outjson $@ --outsql ${OUTDIR}/`basename $<`.sql --outrepr ${OUTDIR}/`basename $<`.repr $<
 
 %.jsonl: %.json
 	cat $< | jq -S -c '.[]' > $@

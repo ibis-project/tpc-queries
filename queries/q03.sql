@@ -14,4 +14,6 @@ GROUP BY l_orderkey,
          o_orderdate,
          o_shippriority
 ORDER BY revenue DESC,
-         o_orderdate;
+         o_orderdate
+LIMIT 10
+;
