@@ -19,7 +19,7 @@ def query_tpch_q01(con, DELTA=90):
     q = t.filter(t.L_SHIPDATE < interval)
     discount_price = t.L_EXTENDEDPRICE*(1-t.L_DISCOUNT)
     charge = discount_price*(1+t.L_TAX)
-    q = q.group_by(['L_LINESTATUS', 'L_RETURNFLAG'])
+    q = q.group_by(['L_RETURNFLAG', 'L_LINESTATUS'])
     q = q.order_by(['L_RETURNFLAG', 'L_LINESTATUS'])
     q = q.aggregate(sum_qty=t.L_QUANTITY.sum(),
                     sum_base_price=t.L_EXTENDEDPRICE.sum(),
