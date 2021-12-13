@@ -1,47 +1,112 @@
 #!/usr/bin/env python3
 
-import sys
-import click
-import sqlparse
+import itertools
+import json
+import time
+from pathlib import Path
+from typing import List, Dict, Any
 
+import click
+import pandas
 import ibis
 
 
-@click.command()
-@click.argument('queryfn', type=click.File('r'))
-@click.option('--db', default='tpch.db', help='sqlite db to run against')
-@click.option('--outsql', type=click.File('w'), default=sys.stderr,
-              help='output filename for compiled SQL')
-@click.option('--outrepr', type=click.File('w'), default=sys.stderr,
-              help='output filename for ibis query repr')
-@click.option('--outjson', type=click.File('w'), default=sys.stdout,
-              help='output filename for data results as JSON')
-def run(queryfn, db, outsql, outrepr, outjson):
-    try:
-        exec(queryfn.read(), globals())
-    except Exception as e:
-        import traceback
-        traceback.print_exception(e, file=sys.stderr)
+def run_sqlite(qid, db='tpch.db', outdir=None):
+    import sqlite3
 
-    queries = [func for k, func in globals().items() if k.startswith('query_')]
-    if not queries:
-        print('no query_ funcs in given .py file', file=sys.stderr)
-        return
+    con = sqlite3.connect(db)
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
 
-    con = ibis.sqlite.connect(db)
-    for func in queries:
-        q = func(con)
+    sql = open(f'queries/{qid}.sql').read()
+    cur.execute(sql)
+    rows = cur.fetchall()
+    return list(dict(r) for r in rows)
 
-        print(repr(q), file=outrepr, flush=True)
 
+def run_ibis(qid, db='tpch.db', outdir=None, backend='sqlite'):
+    import importlib
+    mod = importlib.import_module(f'queries.{qid}')
+    con = getattr(ibis, backend).connect(db)
+    q = getattr(mod, f'query_tpch_{qid}')(con)
+
+    if outdir:
+        print(repr(q), file=open(Path(outdir)/f'{qid}-ibis-repr.txt', mode='w'), flush=True)
+
+        import sqlparse
         sql = sqlparse.format(str(q.compile()),
                               reindent=True,
                               keyword_case='upper')
 
-        print(sql, file=outsql, flush=True)
+        print(sql, file=open(Path(outdir)/f'{qid}-ibis-{backend}.sql', mode='w'), flush=True)
 
-        r = q.execute()
-        print(r.to_json(orient='records'), file=outjson)
+    rows = q.execute()
+    return rows.to_dict('records')
+
+
+def compare(rows1, rows2):
+    ndiffs = 0
+    for i, (r1, r2) in enumerate(itertools.zip_longest(rows1, rows2)):
+        if r1 is None:
+            print(f'[{i}]  extra row: {r2}')
+            ndiffs += 1
+            continue
+
+        if r2 is None:
+            print(f'[{i}]  extra row: {r1}')
+            ndiffs += 1
+            continue
+
+        keys = set(r1.keys())
+        keys |= set(r2.keys())
+        for k in keys:
+            v1 = r1.get(k, None)
+            v2 = r2.get(k, None)
+            if 'DATE' in k:
+                if v1 != v2.strftime('%Y-%m-%d'):
+                    print(f'[{i}].{k} {v1} ({type(v1)} != {v2} ({type(v2)}')
+                    ndiffs += 1
+            else:
+                if v1 != v2:
+                    print(f'[{i}].{k} {v1} ({type(v1)} != {v2} ({type(v2)}')
+                    ndiffs += 1
+    return ndiffs
+
+
+def out_jsonl(p: Path, rows: List[Dict[str, Any]]):
+    class DateEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, pandas.Timestamp):
+                return str(obj)
+            return json.JSONEncoder.default(self, obj)
+    with open(p, mode='w') as fp:
+        for r in rows:
+            print(json.dumps(r, cls=DateEncoder), file=fp, flush=True)
+
+
+@click.command()
+@click.argument('qids', nargs=-1)
+@click.option('--db', default='tpch.db', help='db to run against')
+@click.option('--outdir', type=click.Path(), default=None, help='')
+@click.option('--backend', default='sqlite', help='ibis backend to use')
+def main(qids, db, outdir, backend):
+    for qid in qids:
+        kwargs = dict(db=db, outdir=outdir)
+        t1 = time.time()
+        rows1 = run_sqlite(qid, **kwargs)
+        t2 = time.time()
+        rows2 = run_ibis(qid, **kwargs)
+        t3 = time.time()
+
+        if outdir:
+            out_jsonl(Path(outdir)/f'{qid}-{backend}.jsonl', rows1)
+            out_jsonl(Path(outdir)/f'{qid}-{backend}-ibis.jsonl', rows2)
+
+        ndiffs = compare(rows1, rows2)
+
+        # r = dict(qid=qid, ndiffs=ndiffs, sqlite_secs=t2-t1, ibis=t3-t2)
+        print(f'{qid}  nrows:{len(rows1)}  ndiffs:{ndiffs}  sqlite:{t2-t1:.03f}s  ibis:{t3-t2:.03f}s')
+
 
 if __name__ == '__main__':
-    run()
+    main()
