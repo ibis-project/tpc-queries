@@ -18,10 +18,13 @@ def run_sqlite(qid, db='tpch.db', outdir=None):
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
-    sql = open(f'queries/{qid}.sql').read()
-    cur.execute(sql)
-    rows = cur.fetchall()
-    return list(dict(r) for r in rows)
+    try:
+        sql = open(f'queries/{qid}.sql').read()
+        cur.execute(sql)
+        rows = cur.fetchall()
+        return list(dict(r) for r in rows)
+    except FileNotFoundError:
+        return []
 
 
 def run_ibis(qid, db='tpch.db', outdir=None, backend='sqlite'):
