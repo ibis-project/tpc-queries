@@ -3,7 +3,7 @@
 from utils import add_date
 
 
-def query_tpch_q07(con, NATION1="FRANCE", NATION2="GERMANY", DATE='1995-01-01'):
+def tpc_h07(con, NATION1="FRANCE", NATION2="GERMANY", DATE='1995-01-01'):
     supplier = con.table('supplier')
     lineitem = con.table('lineitem')
     orders = con.table('orders')

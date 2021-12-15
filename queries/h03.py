@@ -4,7 +4,7 @@
 import ibis
 
 
-def query_tpch_q03(con, MKTSEGMENT='BUILDING', DATE='1995-03-15'):
+def tpc_h03(con, MKTSEGMENT='BUILDING', DATE='1995-03-15'):
     customer = con.table('customer')
     orders = con.table('orders')
     lineitem = con.table('lineitem')

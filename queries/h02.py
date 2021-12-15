@@ -4,7 +4,7 @@
 import ibis
 
 
-def query_tpch_q02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
+def tpc_h02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
     part = con.table("part")
     supplier = con.table("supplier")
     partsupp = con.table("partsupp")

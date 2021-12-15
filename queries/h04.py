@@ -3,7 +3,7 @@
 from utils import add_date
 
 
-def query_tpch_q04(con, DATE='1993-07-01'):
+def tpc_h04(con, DATE='1993-07-01'):
     orders = con.table('orders')
     lineitem = con.table('lineitem')
     cond = ((lineitem.L_ORDERKEY == orders.O_ORDERKEY) &

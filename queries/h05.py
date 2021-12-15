@@ -5,7 +5,7 @@ import ibis
 from utils import add_date
 
 
-def query_tpch_q05(con, NAME='ASIA', DATE='1994-01-01'):
+def query_tpch05(con, NAME='ASIA', DATE='1994-01-01'):
     customer = con.table('customer')
     orders = con.table('orders')
     lineitem = con.table('lineitem')

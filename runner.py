@@ -31,7 +31,7 @@ def run_ibis(qid, db='tpch.db', outdir=None, backend='sqlite'):
     import importlib
     mod = importlib.import_module(f'queries.{qid}')
     con = getattr(ibis, backend).connect(db)
-    q = getattr(mod, f'query_tpch_{qid}')(con)
+    q = getattr(mod, f'tpc_{qid}')(con)
 
     if outdir:
         print(repr(q), file=open(Path(outdir)/f'{qid}-ibis-repr.txt', mode='w'), flush=True)
