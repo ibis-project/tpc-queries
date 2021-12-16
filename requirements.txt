@@ -1,0 +1,5 @@
+rpy2
+click
+pandas
+ibis
+sqlparse
