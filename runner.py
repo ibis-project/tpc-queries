@@ -77,7 +77,11 @@ def setup_r():
 def run_r(qid, db='tpch.db', outdir=None):
     import rpy2.robjects
     r = rpy2.robjects.r
-    r['source'](f'queries/{qid}.R')
+    fn = f'queries/{qid}.R'
+    if not Path(fn).exists():
+        return []
+
+    r['source'](fn)
 
     func = rpy2.robjects.globalenv[f'tpc_{qid}']
     runner = rpy2.robjects.globalenv['run_query']
