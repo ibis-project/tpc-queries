@@ -1,24 +1,24 @@
 tpc_h01 <- function(input_func, collect_func = dplyr::collect) {
-    res <- input_func("lineitem") %>%
-    select(L_SHIPDATE, L_RETURNFLAG, L_LINESTATUS, L_QUANTITY,
-           L_EXTENDEDPRICE, L_DISCOUNT, L_TAX) %>%
+    input_func("lineitem") %>%
+    select(l_shipdate, l_returnflag, l_linestatus, l_quantity,
+           l_extendedprice, l_discount, l_tax) %>%
     # kludge, should be: filter(l_shipdate <= "1998-12-01" - interval x day) %>%
     # where x is between 60 and 120, 90 is the only one that will validate.
-    filter(L_SHIPDATE <= as.Date("1998-09-02")) %>%
-    select(L_RETURNFLAG, L_LINESTATUS, L_QUANTITY, L_EXTENDEDPRICE, L_DISCOUNT, L_TAX) %>%
-    group_by(L_RETURNFLAG, L_LINESTATUS) %>%
+    filter(l_shipdate <= as.Date("1998-09-02")) %>%
+    select(l_returnflag, l_linestatus, l_quantity, l_extendedprice, l_discount, l_tax) %>%
+    group_by(l_returnflag, l_linestatus) %>%
     summarise(
-      sum_qty = sum(L_QUANTITY),
-      sum_base_price = sum(L_EXTENDEDPRICE),
-      sum_disc_price = sum(L_EXTENDEDPRICE * (1 - L_DISCOUNT)),
-      sum_charge = sum(L_EXTENDEDPRICE * (1 - L_DISCOUNT) * (1 + L_TAX)),
-      avg_qty = mean(L_QUANTITY),
-      avg_price = mean(L_EXTENDEDPRICE),
-      avg_disc = mean(L_DISCOUNT),
-      count_order = n()
+      sum_qty = sum(l_quantity),
+      sum_base_price = sum(l_extendedprice),
+      sum_disc_price = sum(l_extendedprice * (1 - l_discount)),
+      sum_charge = sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)),
+      avg_qty = mean(l_quantity),
+      avg_price = mean(l_extendedprice),
+      avg_disc = mean(l_discount),
+      count_order = n(),
+      .groups = "drop"
     ) %>%
     ungroup() %>%
-    arrange(L_RETURNFLAG, L_LINESTATUS) %>%
+    arrange(l_returnflag, l_linestatus) %>%
     collect_func()
-    return(res)
 }

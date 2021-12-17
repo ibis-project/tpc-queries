@@ -2,6 +2,8 @@
 
 import itertools
 import json
+import os
+import sys
 import time
 from pathlib import Path
 from typing import List, Dict, Any
@@ -11,57 +13,121 @@ import pandas
 import ibis
 
 
+def write_stdout(s):
+    print(s, end='')
+
+
+def write_stderr(s):
+    print(s, end='', file=sys.stderr)
+
+
 def out_txt(s, outdir, fn):
     if outdir:
         print(s, file=open(Path(outdir)/fn, mode='w'), flush=True)
 
 
-def run_sqlite(qid, db='tpch.db', outdir=None):
+def out_sql(sql, outdir, fn):
+    import sqlparse
+    sql = sqlparse.format(str(sql), reindent=True, keyword_case='upper')
+
+    out_txt(sql, outdir, fn)
+
+
+def out_jsonl(rows: List[Dict[str, Any]], outdir, fn):
+    class DateEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, pandas.Timestamp):
+                return str(obj)
+            return json.JSONEncoder.default(self, obj)
+
+    if outdir:
+        with open(Path(outdir)/fn, mode='w') as fp:
+            for r in rows:
+                print(json.dumps(r, cls=DateEncoder), file=fp, flush=True)
+
+
+def out_benchmark(**kwargs):
+    def fmt(v):
+        if isinstance(v, float):
+            return '%.03f' % v
+        else:
+            return str(v)
+
+    print('  '.join(f'{k}:{fmt(v)}' for k, v in kwargs.items()))
+
+
+def setup_sqlite(db='tpch.db'):
     import sqlite3
 
     con = sqlite3.connect(db)
     con.row_factory = sqlite3.Row
+
+    return con
+
+
+def teardown_sqlite(con):
+    pass
+
+
+def run_sqlite(con, qid, outdir=None, backend='sqlite'):
     cur = con.cursor()
 
     try:
         sql = open(f'queries/{qid}.sql').read()
+        t1 = time.time()
         cur.execute(sql)
         rows = cur.fetchall()
-        return list(dict(r) for r in rows)
+        t2 = time.time()
+        rows = list(dict(r) for r in rows)
+        out_jsonl(rows, outdir, f'{qid}-{backend}.jsonl')
+        return rows, t2-t1
     except FileNotFoundError:
         return []
 
 
-def run_ibis(qid, db='tpch.db', outdir=None, backend='sqlite'):
+def setup_ibis(db='tpch.db', backend='sqlite'):
+    return getattr(ibis, backend).connect(db)
+
+
+def teardown_ibis(con):
+    pass
+
+
+def run_ibis(con, qid, outdir=None, backend='sqlite'):
     import importlib
     mod = importlib.import_module(f'queries.{qid}')
-    con = getattr(ibis, backend).connect(db)
     q = getattr(mod, f'tpc_{qid}')(con)
 
     out_txt(repr(q), outdir, f'{qid}-ibis-repr.txt')
 
-    import sqlparse
-    sql = sqlparse.format(str(q.compile()),
-                          reindent=True,
-                          keyword_case='upper')
+    out_sql(str(q.compile()), outdir, f'{qid}-ibis-{backend}.sql')
 
-    out_txt(sql, outdir, f'{qid}-ibis-{backend}.sql')
-
+    t1 = time.time()
     rows = q.execute()
-    return rows.to_dict('records')
+    t2 = time.time()
+
+    out_jsonl(rows, outdir, f'{qid}-ibis-{backend}.jsonl')
+    return rows.to_dict('records'), t2-t1
 
 
-def setup_r():
+def setup_r(db='tpch.db', backend='sqlite', quiet=False):
+    os.putenv('R_LIBS_SITE', '/usr/lib/R/library')  # skip warnings
+
     import rpy2
     import rpy2.robjects
+    import rpy2.robjects.pandas2ri
     import rpy2.robjects.packages as rpackages
 
-#    rpy2.rinterface_lib.callbacks.consolewrite_print = lambda s: print(s, end='')
-#    rpy2.rinterface_lib.callbacks.consolewrite_warnerror = lambda s: print(s, end='')
-    rpy2.rinterface_lib.callbacks.consolewrite_print = lambda s: None
-    rpy2.rinterface_lib.callbacks.consolewrite_warnerror = lambda s: None
+    rpy2.robjects.pandas2ri.activate()
 
-    pkgs = ('dplyr', 'lubridate', 'DBI', 'RSQLite')
+    if quiet:
+        rpy2.rinterface_lib.callbacks.consolewrite_print = lambda s: None
+        rpy2.rinterface_lib.callbacks.consolewrite_warnerror = lambda s: None
+    else:
+        rpy2.rinterface_lib.callbacks.consolewrite_print = write_stdout
+        rpy2.rinterface_lib.callbacks.consolewrite_warnerror = write_stderr
+
+    pkgs = ('dplyr', 'dbplyr', 'lubridate', 'DBI', 'RSQLite')
     names_to_install = [x for x in pkgs if not rpackages.isinstalled(x)]
 
     if names_to_install:
@@ -73,33 +139,51 @@ def setup_r():
     r = rpy2.robjects.r
     r['source']('init.R')
 
+    global query_dbplyr, query_dplyr, query_sql
+    query_dbplyr = rpy2.robjects.globalenv['query_dbplyr']
+    query_dplyr = rpy2.robjects.globalenv['query_dplyr']
+    query_sql = rpy2.robjects.globalenv['query_sql']
 
-def run_r(qid, db='tpch.db', outdir=None):
+    return rpy2.robjects.globalenv['setup_sqlite'](db)
+
+
+def teardown_r(con):
     import rpy2.robjects
+    rpy2.robjects.globalenv['teardown_sqlite'](con)
+
+
+def run_r(con, qid, outdir=None, backend='sqlite', queryfunc=None):
+    import rpy2.robjects
+
     r = rpy2.robjects.r
     fn = f'queries/{qid}.R'
     if not Path(fn).exists():
         return []
 
     r['source'](fn)
-
     func = rpy2.robjects.globalenv[f'tpc_{qid}']
-    runner = rpy2.robjects.globalenv['run_query']
 
-    return runner(func, db)
+    sql = query_sql(con, func)
+    out_sql(sql, outdir, f'{qid}-r-{backend}.sql')
+
+    t1 = time.time()
+    res = queryfunc(con, func)
+    t2 = time.time()
+
+    rows = res.to_dict('records')
+    out_jsonl(rows, outdir, f'{qid}-{backend}-r.jsonl')
+    return rows, t2-t1
 
 
 def compare(rows1, rows2):
-    ndiffs = 0
+    diffs = []
     for i, (r1, r2) in enumerate(itertools.zip_longest(rows1, rows2)):
         if r1 is None:
-            print(f'[{i}]  extra row: {r2}')
-            ndiffs += 1
+            diffs.append(f'[{i}]  extra row: {r2}')
             continue
 
         if r2 is None:
-            print(f'[{i}]  extra row: {r1}')
-            ndiffs += 1
+            diffs.append(f'[{i}]  extra row: {r1}')
             continue
 
         keys = set(r1.keys())
@@ -108,25 +192,13 @@ def compare(rows1, rows2):
             v1 = r1.get(k, None)
             v2 = r2.get(k, None)
             if 'DATE' in k:
-                if v1 != v2.strftime('%Y-%m-%d'):
-                    print(f'[{i}].{k} {v1} ({type(v1)} != {v2} ({type(v2)}')
-                    ndiffs += 1
+                if not v2 or v1 != v2.strftime('%Y-%m-%d'):
+                    diffs.append(f'[{i}].{k} {v1} ({type(v1)} != {v2} ({type(v2)}')
             else:
                 if v1 != v2:
-                    print(f'[{i}].{k} {v1} ({type(v1)} != {v2} ({type(v2)}')
-                    ndiffs += 1
-    return ndiffs
+                    diffs.append(f'[{i}].{k} {v1} ({type(v1)} != {v2} ({type(v2)}')
 
-
-def out_jsonl(p: Path, rows: List[Dict[str, Any]]):
-    class DateEncoder(json.JSONEncoder):
-        def default(self, obj):
-            if isinstance(obj, pandas.Timestamp):
-                return str(obj)
-            return json.JSONEncoder.default(self, obj)
-    with open(p, mode='w') as fp:
-        for r in rows:
-            print(json.dumps(r, cls=DateEncoder), file=fp, flush=True)
+    return diffs
 
 
 @click.command()
@@ -135,26 +207,37 @@ def out_jsonl(p: Path, rows: List[Dict[str, Any]]):
 @click.option('--outdir', type=click.Path(), default=None, help='')
 @click.option('--backend', default='sqlite', help='ibis backend to use')
 def main(qids, db, outdir, backend):
-    setup_r()
+    kwargs = dict(outdir=outdir, backend=backend)
+    con1 = setup_sqlite(db)
+    con2 = setup_ibis(db, backend=backend)
+    con3 = setup_r(db, backend=backend)
+
     for qid in qids:
-        kwargs = dict(db=db, outdir=outdir)
-        t1 = time.time()
-        rows1 = run_sqlite(qid, **kwargs)
-        t2 = time.time()
-        rows2 = run_ibis(qid, **kwargs)
-        t3 = time.time()
-        rows3 = run_r(qid, **kwargs)
-        t4 = time.time()
+        rows1, t1 = run_sqlite(con1, qid, **kwargs)
+        out_benchmark(qid=qid, method='raw-sqlite',
+                      nrows=len(rows1), ndiffs=0, elapsed_s=t1)
 
-        if outdir:
-            out_jsonl(Path(outdir)/f'{qid}-{backend}.jsonl', rows1)
-            out_jsonl(Path(outdir)/f'{qid}-{backend}-ibis.jsonl', rows2)
-            out_jsonl(Path(outdir)/f'{qid}-{backend}-r.jsonl', rows3)
+        rows2, t2 = run_ibis(con2, qid, **kwargs)
+        diffs2 = compare(rows1, rows2)
+        out_benchmark(qid=qid, method='ibis-sqlite',
+                      nrows=len(rows2), ndiffs=len(diffs2), elapsed_s=t2)
+        out_txt('\n'.join(diffs2), outdir, f'{qid}-ibis-diffs.txt')
 
-        ndiffs = compare(rows1, rows2)
+        rows3, t3 = run_r(con3, qid, queryfunc=query_dplyr, **kwargs)
+        diffs3 = compare(rows1, rows3)
+        out_benchmark(qid=qid, method='dplyr-sqlite',
+                      nrows=len(rows3), ndiffs=len(diffs3), elapsed_s=t3)
+        out_txt('\n'.join(diffs3), outdir, f'{qid}-dplyr-diffs.txt')
 
-        # r = dict(qid=qid, ndiffs=ndiffs, sqlite_secs=t2-t1, ibis=t3-t2)
-        print(f'{qid}  nrows:{len(rows1)}  ndiffs:{ndiffs}  sqlite:{t2-t1:.03f}s  ibis:{t3-t2:.03f}s  r:{t4-t3:.03f}s')
+        rows4, t4 = run_r(con3, qid, queryfunc=query_dbplyr, **kwargs)
+        diffs4 = compare(rows1, rows4)
+        out_benchmark(qid=qid, method='dbplyr-sqlite',
+                      nrows=len(rows4), ndiffs=len(diffs4), elapsed_s=t4)
+        out_txt('\n'.join(diffs4), outdir, f'{qid}-dbplyr-diffs.txt')
+
+    teardown_sqlite(con1)
+    teardown_ibis(con2)
+    teardown_r(con3)
 
 
 if __name__ == '__main__':

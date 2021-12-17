@@ -11,7 +11,7 @@ def tpc_h06(con, DATE='1994-01-01', DISCOUNT=0.06, QUANTITY=24):
                     q.L_SHIPDATE >= DATE,
                     q.L_SHIPDATE < add_date(DATE, dy=1),
                     q.L_DISCOUNT.between(discount_min, discount_max),
-                    q.LUANTITY < QUANTITY
+                    q.L_QUANTITY < QUANTITY
                     ])
     q = q.aggregate(revenue=(q.L_EXTENDEDPRICE*q.L_DISCOUNT).sum())
     return q
