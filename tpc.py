@@ -46,14 +46,20 @@ def out_jsonl(rows: List[Dict[str, Any]], outdir, fn):
                 print(json.dumps(r, cls=DateEncoder), file=fp, flush=True)
 
 
-def out_benchmark(**kwargs):
+def out_benchmark(outdir, **kwargs):
     def fmt(v):
         if isinstance(v, float):
             return '%.03f' % v
         else:
             return str(v)
 
-    print('  '.join(f'{k}:{fmt(v)}' for k, v in kwargs.items()))
+    with open(Path(outdir)/'benchmarks.txt', mode='a') as fp:
+        print('  '.join(f'{k}:{fmt(v)}' for k, v in kwargs.items()), file=fp)
+#        if not quiet:
+        print('  '.join(f'{k}:{fmt(v)}' for k, v in kwargs.items()))
+
+    with open(Path(outdir)/'benchmarks.jsonl', mode='a') as fp:
+        print(json.dumps(kwargs), file=fp)
 
 
 def setup_sqlite(db='tpch.db'):
@@ -80,9 +86,9 @@ def run_sqlite(con, qid, outdir=None, backend='sqlite'):
         t2 = time.time()
         rows = list(dict(r) for r in rows)
         out_jsonl(rows, outdir, f'{qid}-{backend}.jsonl')
-        return rows, t2-t1
-    except FileNotFoundError:
-        return []
+        return rows, dict(elapsed_s=t2-t1, nrows=len(rows))
+    except FileNotFoundError as e:
+        return [], {'error': str(e)}
 
 
 def setup_ibis(db='tpch.db', backend='sqlite'):
@@ -106,8 +112,9 @@ def run_ibis(con, qid, outdir=None, backend='sqlite'):
     rows = q.execute()
     t2 = time.time()
 
-    out_jsonl(rows, outdir, f'{qid}-ibis-{backend}.jsonl')
-    return rows.to_dict('records'), t2-t1
+    outrows = rows.to_dict('records')
+    out_jsonl(outrows, outdir, f'{qid}-ibis-{backend}.jsonl')
+    return outrows, dict(elapsed_s=t2-t1, nrows=len(outrows))
 
 
 def setup_r(db='tpch.db', backend='sqlite', quiet=False):
@@ -158,7 +165,7 @@ def run_r(con, qid, outdir=None, backend='sqlite', queryfunc=None):
     r = rpy2.robjects.r
     fn = f'queries/{qid}.R'
     if not Path(fn).exists():
-        return []
+        return [], {}
 
     r['source'](fn)
     func = rpy2.robjects.globalenv[f'tpc_{qid}']
@@ -166,13 +173,21 @@ def run_r(con, qid, outdir=None, backend='sqlite', queryfunc=None):
     sql = query_sql(con, func)
     out_sql(sql, outdir, f'{qid}-r-{backend}.sql')
 
+    errors = []
+    rows = []
     t1 = time.time()
-    res = queryfunc(con, func)
+    try:
+        res = queryfunc(con, func)
+        rows = res.to_dict('records')
+        out_jsonl(rows, outdir, f'{qid}-{backend}-r.jsonl')
+    except rpy2.rinterface_lib.embedded.RRuntimeError as e:
+        errors.append(str(e))
+
     t2 = time.time()
 
-    rows = res.to_dict('records')
-    out_jsonl(rows, outdir, f'{qid}-{backend}-r.jsonl')
-    return rows, t2-t1
+    return rows, dict(elapsed_s=t2-t1,
+                      nrows=len(rows),
+                      errors=errors)
 
 
 def compare(rows1, rows2):
@@ -186,17 +201,29 @@ def compare(rows1, rows2):
             diffs.append(f'[{i}]  extra row: {r1}')
             continue
 
-        keys = set(r1.keys())
-        keys |= set(r2.keys())
+        lcr1 = {k.lower():v for k, v in r1.items()}
+        lcr2 = {k.lower():v for k, v in r2.items()}
+        keys = set(lcr1.keys())
+        keys |= set(lcr2.keys())
         for k in keys:
-            v1 = r1.get(k, None)
-            v2 = r2.get(k, None)
-            if 'DATE' in k:
-                if not v2 or v1 != v2.strftime('%Y-%m-%d'):
-                    diffs.append(f'[{i}].{k} {v1} ({type(v1)} != {v2} ({type(v2)}')
+            v1 = lcr1.get(k, None)
+            v2 = lcr2.get(k, None)
+            if isinstance(v2, pandas.Timestamp):
+                if v1 != v2.strftime('%Y-%m-%d'):
+                    diffs.append(f'[{i}].{k} (date) {v1} != {v2}')
+            elif isinstance(v1, float) and isinstance(v2, float):
+                if v2 != v1:
+                    if v1:
+                        dv = abs(v2 - v1)
+                        pd = dv/v1
+                    else:
+                        pd = 1
+                    if pd > 1e-10:
+                        diffs.append(f'[{i}].{k} (float) {v1} != {v2} ({pd*100}%)')
+
             else:
                 if v1 != v2:
-                    diffs.append(f'[{i}].{k} {v1} ({type(v1)} != {v2} ({type(v2)}')
+                    diffs.append(f'[{i}].{k} {v1} ({type(v1)}) != {v2} ({type(v2)})')
 
     return diffs
 
@@ -207,32 +234,42 @@ def compare(rows1, rows2):
 @click.option('--outdir', type=click.Path(), default=None, help='')
 @click.option('--backend', default='sqlite', help='ibis backend to use')
 def main(qids, db, outdir, backend):
-    kwargs = dict(outdir=outdir, backend=backend)
+    kwargs = dict(outdir=outdir)
+    os.makedirs(outdir, exist_ok=True)
+    try:
+        os.remove(Path(outdir)/'benchmarks.jsonl')
+    except FileNotFoundError:
+        pass
+    try:
+        os.remove(Path(outdir)/'benchmarks.txt')
+    except FileNotFoundError:
+        pass
+
     con1 = setup_sqlite(db)
     con2 = setup_ibis(db, backend=backend)
     con3 = setup_r(db, backend=backend)
 
     for qid in qids:
-        rows1, t1 = run_sqlite(con1, qid, **kwargs)
-        out_benchmark(qid=qid, method='raw-sqlite',
-                      nrows=len(rows1), ndiffs=0, elapsed_s=t1)
+        rows1, info = run_sqlite(con1, qid, backend='raw-sqlite', **kwargs)
+        out_benchmark(outdir, qid=qid, method='raw-sqlite',
+                      ndiffs=0, **info)
 
-        rows2, t2 = run_ibis(con2, qid, **kwargs)
+        rows2, info = run_ibis(con2, qid, backend='ibis-sqlite', **kwargs)
         diffs2 = compare(rows1, rows2)
-        out_benchmark(qid=qid, method='ibis-sqlite',
-                      nrows=len(rows2), ndiffs=len(diffs2), elapsed_s=t2)
+        out_benchmark(outdir, qid=qid, method='ibis-sqlite',
+                      ndiffs=len(diffs2), **info)
         out_txt('\n'.join(diffs2), outdir, f'{qid}-ibis-diffs.txt')
 
-        rows3, t3 = run_r(con3, qid, queryfunc=query_dplyr, **kwargs)
+        rows3, info = run_r(con3, qid, queryfunc=query_dplyr, backend='dplyr', **kwargs)
         diffs3 = compare(rows1, rows3)
-        out_benchmark(qid=qid, method='dplyr-sqlite',
-                      nrows=len(rows3), ndiffs=len(diffs3), elapsed_s=t3)
+        out_benchmark(outdir, qid=qid, method='dplyr-sqlite',
+                      ndiffs=len(diffs3), **info)
         out_txt('\n'.join(diffs3), outdir, f'{qid}-dplyr-diffs.txt')
 
-        rows4, t4 = run_r(con3, qid, queryfunc=query_dbplyr, **kwargs)
+        rows4, info = run_r(con3, qid, queryfunc=query_dbplyr, backend='dbplyr', **kwargs)
         diffs4 = compare(rows1, rows4)
-        out_benchmark(qid=qid, method='dbplyr-sqlite',
-                      nrows=len(rows4), ndiffs=len(diffs4), elapsed_s=t4)
+        out_benchmark(outdir, qid=qid, method='dbplyr-sqlite',
+                      ndiffs=len(diffs4), **info)
         out_txt('\n'.join(diffs4), outdir, f'{qid}-dbplyr-diffs.txt')
 
     teardown_sqlite(con1)

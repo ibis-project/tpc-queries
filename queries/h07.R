@@ -41,7 +41,7 @@ tpc_h07 <- function(input_func, collect_func = dplyr::collect) {
       supp_nation = n1_name,
       cust_nation = n2_name,
       # kludge (?) l_year = as.integer(strftime(l_shipdate, "%Y")),
-      l_year = year(l_shipdate),
+      l_year = strftime(l_shipdate, "%Y"), # year(l_shipdate),
       volume = l_extendedprice * (1 - l_discount)) %>%
     select(supp_nation, cust_nation, l_year, volume) %>%
     group_by(supp_nation, cust_nation, l_year) %>%

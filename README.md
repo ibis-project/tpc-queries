@@ -10,7 +10,7 @@ All queries are ready-to-run, using the default substitution parameters as speci
 ## Usage
 
 ```
-./tpc [--db <tpch.sqlite>] [--outdir <output_dir>] <queries>
+./tpc.py [--db <tpch.sqlite>] [--outdir <output_dir>] <queries>
 ```
 
 where:
