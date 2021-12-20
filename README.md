@@ -1,4 +1,27 @@
-# TPC-H coverage
+# TPC query translations
 
-- queries from http://tpc.org/tpc_documents_current_versions/pdf/tpc-h_v3.0.0.pdf
-- data from https://s3.console.aws.amazon.com/s3/object/voltrondata-tpch?region=us-east-2&prefix=1gb/sqlite/tpch.db
+All queries are ready-to-run, using the default substitution parameters as specified by the TPC-H spec.
+
+- Each translation of each query is in its own file in the `queries/` directory.
+  - .sql files are taken directly from the spec and modified as needed to be executed directly by SQLite
+  - .R files are written in R, from [ursacomputing/arrowbench](https://github.com/ursacomputing/arrowbench/blob/main/R/tpch-queries.R)
+  - .py files are translated to [Ibis](https://github.com/ibis-project/ibis)
+
+## Usage
+
+```
+./tpc [--db <tpch.sqlite>] [--outdir <output_dir>] <queries>
+```
+
+where:
+- `<output_dir>` specifies a directory for debugging files: results, generated queries, logs (default is no debugging output)
+- `<tpch.sqlite>` is the TPC database to use
+- `<queries>` is any number of TPC query ids: `h01` .. `h08`
+
+
+## Notes
+
+- Some queries require a TPC database with scale factor of .01 at minimum to generate results.
+
+## Links
+- [TPC-H v3.0 specification](http://tpc.org/tpc_documents_current_versions/pdf/tpc-h_v3.0.0.pdf)
