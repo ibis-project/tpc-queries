@@ -89,7 +89,7 @@ def run_sqlite(con, qid, outdir=None, backend='sqlite'):
         rows = list(dict(r) for r in rows)
         out_jsonl(rows, outdir, f'{qid}-{backend}.jsonl')
         return rows, dict(elapsed_s=t2-t1, nrows=len(rows))
-    except FileNotFoundError as e:
+    except Exception as e:
         return [], {'error': str(e)}
 
 
@@ -189,7 +189,7 @@ def run_r(con, qid, outdir=None, backend='sqlite', queryfunc=None):
 
     return rows, dict(elapsed_s=t2-t1,
                       nrows=len(rows),
-                      errors=errors)
+                      errors='\n'.join(errors))
 
 
 def compare(rows1, rows2):
@@ -260,11 +260,16 @@ def main(qids, db, outdir, backend):
         out_benchmark(outdir, qid=qid, method='raw-sqlite',
                       ndiffs=0, **info)
 
-        rows2, info = run_ibis(con2, qid, backend='ibis-sqlite', **kwargs)
-        diffs2 = compare(rows1, rows2)
-        out_benchmark(outdir, qid=qid, method='ibis-sqlite',
-                      ndiffs=len(diffs2), **info)
-        out_txt('\n'.join(diffs2), outdir, f'{qid}-ibis-diffs.txt')
+        try:
+            rows2, info = run_ibis(con2, qid, backend='ibis-sqlite', **kwargs)
+            diffs2 = compare(rows1, rows2)
+            out_txt('\n'.join(diffs2), outdir, f'{qid}-ibis-diffs.txt')
+        except Exception as e:
+            rows2 = []
+            diffs2 = []
+            info = {'errors': str(e)}
+
+        out_benchmark(outdir, qid=qid, method='ibis-sqlite', ndiffs=len(diffs2), **info)
 
         rows3, info = run_r(con3, qid, queryfunc=query_dplyr, backend='dplyr', **kwargs)
         diffs3 = compare(rows1, rows3)
