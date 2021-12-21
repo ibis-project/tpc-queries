@@ -106,7 +106,7 @@ def run_ibis(con, qid, outdir=None, backend='sqlite'):
 
     out_txt(repr(q), outdir, f'{qid}-ibis-repr.txt')
 
-    out_sql(str(q.compile()), outdir, f'{qid}-ibis-{backend}.sql')
+    out_sql(q.compile(), outdir, f'{qid}-ibis-{backend}.sql')
 
     t1 = time.time()
     rows = q.execute()
@@ -170,7 +170,7 @@ def run_r(con, qid, outdir=None, backend='sqlite', queryfunc=None):
     r['source'](fn)
     func = rpy2.robjects.globalenv[f'tpc_{qid}']
 
-    sql = query_sql(con, func)
+    sql = query_sql(con, func)[0]
     out_sql(sql, outdir, f'{qid}-r-{backend}.sql')
 
     errors = []
