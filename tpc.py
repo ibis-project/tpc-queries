@@ -64,7 +64,6 @@ def out_benchmark(outdir, **kwargs):
     print('  '.join(f'{k}:{fmt(v)}' for k, v in kwargs.items()))
 
 
-
 def setup_sqlite(db='tpch.db'):
     import sqlite3
 
@@ -204,8 +203,8 @@ def compare(rows1, rows2):
             diffs.append(f'[{i}]  extra row: {r1}')
             continue
 
-        lcr1 = {k.lower():v for k, v in r1.items()}
-        lcr2 = {k.lower():v for k, v in r2.items()}
+        lcr1 = {k.lower(): v for k, v in r1.items()}
+        lcr2 = {k.lower(): v for k, v in r2.items()}
         keys = set(lcr1.keys())
         keys |= set(lcr2.keys())
         for k in keys:
@@ -250,7 +249,7 @@ def main(qids, db, outdir, backend):
             pass
 
     if not qids:
-        qids = sorted(list(set(Path(fn).stem for fn in glob.glob('queries/*') if '.' in fn)))
+        qids = sorted(list(set(Path(fn).stem for fn in glob.glob('queries/*.sql') if '.' in fn)))
 
     con1 = setup_sqlite(db)
     con2 = setup_ibis(db, backend=backend)
