@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import glob
 import itertools
 import json
 import os
@@ -53,13 +54,15 @@ def out_benchmark(outdir, **kwargs):
         else:
             return str(v)
 
-    with open(Path(outdir)/'benchmarks.txt', mode='a') as fp:
-        print('  '.join(f'{k}:{fmt(v)}' for k, v in kwargs.items()), file=fp)
-#        if not quiet:
-        print('  '.join(f'{k}:{fmt(v)}' for k, v in kwargs.items()))
+    if outdir:
+        with open(Path(outdir)/'benchmarks.txt', mode='a') as fp:
+            print('  '.join(f'{k}:{fmt(v)}' for k, v in kwargs.items()), file=fp)
+        with open(Path(outdir)/'benchmarks.jsonl', mode='a') as fp:
+            print(json.dumps(kwargs), file=fp)
 
-    with open(Path(outdir)/'benchmarks.jsonl', mode='a') as fp:
-        print(json.dumps(kwargs), file=fp)
+#        if not quiet:
+    print('  '.join(f'{k}:{fmt(v)}' for k, v in kwargs.items()))
+
 
 
 def setup_sqlite(db='tpch.db'):
@@ -235,15 +238,19 @@ def compare(rows1, rows2):
 @click.option('--backend', default='sqlite', help='ibis backend to use')
 def main(qids, db, outdir, backend):
     kwargs = dict(outdir=outdir)
-    os.makedirs(outdir, exist_ok=True)
-    try:
-        os.remove(Path(outdir)/'benchmarks.jsonl')
-    except FileNotFoundError:
-        pass
-    try:
-        os.remove(Path(outdir)/'benchmarks.txt')
-    except FileNotFoundError:
-        pass
+    if outdir:
+        os.makedirs(outdir, exist_ok=True)
+        try:
+            os.remove(Path(outdir)/'benchmarks.jsonl')
+        except FileNotFoundError:
+            pass
+        try:
+            os.remove(Path(outdir)/'benchmarks.txt')
+        except FileNotFoundError:
+            pass
+
+    if not qids:
+        qids = sorted(list(set(Path(fn).stem for fn in glob.glob('queries/*') if '.' in fn)))
 
     con1 = setup_sqlite(db)
     con2 = setup_ibis(db, backend=backend)
