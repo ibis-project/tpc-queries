@@ -88,7 +88,7 @@ class SqliteRunner(Runner):
     def run(self, qid, outdir=None, backend='sqlite'):
         cur = self.con.cursor()
 
-        sql = open(f'queries/{qid}.sql').read()
+        sql = open(f'sqlite_tpc/{qid}.sql').read()
         t1 = time.time()
         cur.execute(sql)
         rows = cur.fetchall()
@@ -99,7 +99,8 @@ class SqliteRunner(Runner):
     def info(self):
         import sqlite3
         return dict(interface=self.interface,
-                    backend=f'{self.backend} {sqlite3.sqlite_version}')
+                    backend=f'{self.backend}',
+                    sqlite_version=sqlite3.sqlite_version)
 
 
 class IbisRunner(Runner):
@@ -109,7 +110,7 @@ class IbisRunner(Runner):
 
     def run(self, qid, outdir=None, backend='sqlite'):
         import importlib
-        mod = importlib.import_module(f'queries.{qid}')
+        mod = importlib.import_module(f'.{qid}', package='ibis_tpc')
         q = getattr(mod, f'tpc_{qid}')(self.con)
 
         out_txt(repr(q), outdir, f'{qid}-{self.interface}-{self.backend}-expr.txt')
@@ -148,7 +149,7 @@ class RRunner(Runner):
             utils.install_packages(StrVector(names_to_install))
 
         r = rpy2.robjects.r
-        r['source']('init.R')
+        r['source']('dplyr_tpc/init.R')
 
         self.query_dbplyr = rpy2.robjects.globalenv['query_dbplyr']
         self.query_dplyr = rpy2.robjects.globalenv['query_dplyr']
@@ -165,7 +166,7 @@ class RRunner(Runner):
         import rpy2.robjects
 
         r = rpy2.robjects.r
-        fn = f'queries/{qid}.R'
+        fn = f'dplyr_tpc/{qid}.R'
 
         if not Path(fn).exists():
             raise FileNotFoundError(fn)
@@ -247,7 +248,7 @@ def main(qids, db, outdir, interfaces, backend, verbose):
             pass
 
     if not qids:
-        qids = sorted(list(set(Path(fn).stem for fn in glob.glob('queries/*.sql') if '.' in fn)))
+        qids = sorted(list(set(Path(fn).stem for fn in glob.glob('sqlite_tpc/*.sql') if '.' in fn)))
 
     if not interfaces:
         interfaces = ['sqlite', 'ibis', 'dplyr', 'dbplyr']

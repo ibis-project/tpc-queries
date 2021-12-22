@@ -1,6 +1,6 @@
 'Forecasting Revenue Change Query (Q6)'
 
-from utils import add_date
+from .utils import add_date
 
 
 def tpc_h06(con, DATE='1994-01-01', DISCOUNT=0.06, QUANTITY=24):

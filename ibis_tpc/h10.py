@@ -1,7 +1,7 @@
 'Returned Item Reporting Query (Q10)'
 
 import ibis
-from utils import add_date
+from .utils import add_date
 
 
 def tpc_h10(con, DATE='1993-10-01'):

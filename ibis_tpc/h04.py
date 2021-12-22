@@ -1,6 +1,6 @@
 'Order Priority Checking Query (Q4)'
 
-from utils import add_date
+from .utils import add_date
 
 
 def tpc_h04(con, DATE='1993-07-01'):

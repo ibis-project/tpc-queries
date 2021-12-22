@@ -1,6 +1,6 @@
 'Volume Shipping Query (Q7)'
 
-from utils import add_date
+from .utils import add_date
 
 
 def tpc_h07(con, NATION1="FRANCE", NATION2="GERMANY", DATE='1995-01-01'):

@@ -2,7 +2,7 @@
 
 import ibis
 
-from utils import add_date
+from .utils import add_date
 
 
 def tpc_h08(con,

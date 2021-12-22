@@ -3,19 +3,19 @@
 All queries are ready-to-run, using the default substitution parameters as specified by the TPC-H spec.
 
 - Each translation of each query is in its own file in the `queries/` directory.
-  - .sql files are taken directly from the spec and modified as needed to be executed directly by SQLite
-  - .R files are written in R, from [ursacomputing/arrowbench](https://github.com/ursacomputing/arrowbench/blob/main/R/tpch-queries.R)
-  - .py files are translated to [Ibis](https://github.com/ibis-project/ibis)
+  - `sqlite_tpc/h*.sql` files are taken from the spec and modified as needed to be executed directly by SQLite
+  - `ibis_tpc/h*.py` files are translated into Python using [Ibis](https://github.com/ibis-project/ibis)
+  - `dplyr_tpc/h*.R` files are translated into R using dplyr, from [ursacomputing/arrowbench](https://github.com/ursacomputing/arrowbench/blob/main/R/tpch-queries.R)
 
 ## Usage
 
 ```
-./tpc.py [--db <tpch.sqlite>] [--output <output_dir>] [-v] <queries>
+./runtpc [--db <tpch.sqlite>] [--output <output_dir>] [-v] <queries>
 ```
 
 where:
 - `<output_dir>` specifies a directory for debugging files: results, generated queries, logs (default is no debugging output)
-- `<tpch.sqlite>` is the TPC database to use
+- `<tpch.sqlite>` is the TPC database to use (default `tpch.db`, not included)
 - `<queries>` is any number of TPC query ids: `h01` .. `h22`
 
 
