@@ -1,28 +1,25 @@
-CREATE VIEW revenue[STREAM_ID] (supplier_no,
-                                total_revenue) AS
-SELECT l_suppkey,
-       sum(l_extendedprice * (1 - l_discount))
-FROM lineitem
-WHERE l_shipdate >= '1996-01-01'
-  AND l_shipdate < '1996-04-01'
-GROUP BY l_suppkey
-;
-
-
 SELECT s_suppkey,
        s_name,
        s_address,
        s_phone,
        total_revenue
 FROM supplier,
-     revenue[STREAM_ID]
+
+  (SELECT l_suppkey AS supplier_no,
+          sum(l_extendedprice * (1 - l_discount)) AS total_revenue
+   FROM lineitem
+   WHERE l_shipdate >= CAST('1996-01-01' AS date)
+     AND l_shipdate < CAST('1996-04-01' AS date)
+   GROUP BY supplier_no) revenue0
 WHERE s_suppkey = supplier_no
   AND total_revenue =
     (SELECT max(total_revenue)
-     FROM revenue[STREAM_ID])
+     FROM
+       (SELECT l_suppkey AS supplier_no,
+               sum(l_extendedprice * (1 - l_discount)) AS total_revenue
+        FROM lineitem
+        WHERE l_shipdate >= CAST('1996-01-01' as date)
+          AND l_shipdate < CAST('1996-04-01' as date)
+        GROUP BY supplier_no) revenue1)
 ORDER BY s_suppkey
-;
-
-
-DROP VIEW revenue[STREAM_ID]
 ;
