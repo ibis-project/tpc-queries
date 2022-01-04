@@ -12,6 +12,7 @@ import click
 import pandas
 import ibis
 
+g_debug = False
 
 def fmt(v):
     if isinstance(v, float):
@@ -235,7 +236,8 @@ def compare(rows1, rows2):
 @click.option('-i', '--interface', 'interfaces', multiple=True, help='interface to use with backend: sqlite|ibis|dplyr|dbplyr')
 @click.option('-o', '--output', 'outdir', type=click.Path(), default=None, help='directory to save intermediate and debug outputs')
 @click.option('-v', '--verbose', count=True, help='display more information on stdout')
-def main(qids, db, outdir, interfaces, backend, verbose):
+@click.option('--debug', is_flag=True, help='abort on error and print backtrace')
+def main(qids, db, outdir, interfaces, backend, verbose, debug):
     if outdir:
         os.makedirs(outdir, exist_ok=True)
         try:
@@ -246,6 +248,9 @@ def main(qids, db, outdir, interfaces, backend, verbose):
             os.remove(Path(outdir)/'benchmarks.txt')
         except FileNotFoundError:
             pass
+
+    global g_debug
+    g_debug = debug
 
     if not qids:
         qids = sorted(list(set(Path(fn).stem for fn in glob.glob('sqlite_tpc/*.sql') if '.' in fn)))
@@ -280,6 +285,8 @@ def main(qids, db, outdir, interfaces, backend, verbose):
             except KeyboardInterrupt:
                 return
             except Exception as e:
+                if g_debug:
+                    raise
                 rows = []
                 runner.error(type(e).__name__ + ': ' + str(e))
 
