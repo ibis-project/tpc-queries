@@ -3,7 +3,7 @@ SELECT c_name,
        o_orderkey,
        o_orderdate,
        o_totalprice,
-       sum(l_quantity)
+       sum(l_quantity) AS sum_qty
 FROM customer,
      orders,
      lineitem

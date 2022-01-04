@@ -4,7 +4,7 @@
 import ibis
 
 
-def tpc_h02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
+def tpc_h02(con, REGION='EUROPE', SIZE=25, TYPE='BRASS'):
     part = con.table("part")
     supplier = con.table("supplier")
     partsupp = con.table("partsupp")
@@ -22,17 +22,19 @@ def tpc_h02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
         partsupp.join(supplier, supplier.S_SUPPKEY == partsupp.PS_SUPPKEY)
         .join(nation, supplier.S_NATIONKEY == nation.N_NATIONKEY)
         .join(region, nation.N_REGIONKEY == region.R_REGIONKEY)
-    )
+    ).materialize()
 
-    conditional_min = subexpr[region.R_NAME == REGION].PS_SUPPLYCOST.min()
+    subexpr = subexpr[(subexpr.R_NAME == REGION) &
+                      (expr.P_PARTKEY == subexpr.PS_PARTKEY)]
 
     filters = [
         expr.P_SIZE == SIZE,
         expr.P_TYPE.like("%"+TYPE),
         expr.R_NAME == REGION,
-        expr.PS_SUPPLYCOST == conditional_min,
+        expr.PS_SUPPLYCOST == subexpr.PS_SUPPLYCOST.min()
     ]
     q = expr.filter(filters)
+
     q = q.select([
         q.S_ACCTBAL,
         q.S_NAME,
@@ -42,8 +44,6 @@ def tpc_h02(con, REGION='EUROPE', SIZE=15, TYPE='BRASS'):
         q.S_ADDRESS,
         q.S_PHONE,
         q.S_COMMENT,
-        q.R_NAME,
-        q.P_TYPE,
     ])
 
     return q.sort_by(
