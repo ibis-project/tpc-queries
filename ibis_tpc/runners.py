@@ -125,6 +125,33 @@ class IbisRunner(Runner):
         return rows.to_dict('records'), t2-t1
 
 
+class SqlAlchemyRunner(Runner):
+    def setup(self, db='tpch.db'):
+        super().setup(db=db)
+
+        from sqlalchemy import create_engine, MetaData
+        self.engine = create_engine(f'sqlite:///{db}')
+        self.metadata = MetaData(self.engine)
+
+    def table(self, tblname):
+        from sqlalchemy import Table
+        return Table(tblname, self.metadata, autoload=True)
+
+    def run(self, qid, outdir=None, backend='sqlite'):
+        import importlib
+        mod = importlib.import_module(f'.{qid}', package='sqlalchemy_tpc')
+        q = getattr(mod, f'tpc_{qid}')(self)
+
+        sql = q.compile(self.engine, compile_kwargs=dict(literal_binds=True))
+        out_sql(sql, outdir, f'{qid}-{self.interface}-{self.backend}-compiled.sql')
+
+        t1 = time.time()
+        rows = q.execute()
+        t2 = time.time()
+
+        return list(dict(r) for r in rows), t2-t1
+
+
 class RRunner(Runner):
     def setup(self, db='tpch.db'):
         super().setup(db=db)
@@ -187,6 +214,7 @@ class RRunner(Runner):
 
 setup_sqlite = SqliteRunner
 setup_ibis = IbisRunner
+setup_sqlalchemy = SqlAlchemyRunner
 setup_dplyr = RRunner
 setup_dbplyr = RRunner
 
@@ -256,7 +284,7 @@ def main(qids, db, outdir, interfaces, backend, verbose, debug):
         qids = sorted(list(set(Path(fn).stem for fn in glob.glob('sqlite_tpc/*.sql') if '.' in fn)))
 
     if not interfaces:
-        interfaces = ['sqlite', 'ibis', 'dplyr', 'dbplyr']
+        interfaces = ['sqlite', 'ibis', 'sqlalchemy', 'dplyr', 'dbplyr']
 
     runners = [globals()['setup_'+interface](interface=interface, backend=backend) for interface in interfaces]
 
