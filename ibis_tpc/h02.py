@@ -1,10 +1,9 @@
-'Minimum Cost Supplier Query (Q2)'
-
-
 import ibis
 
 
 def tpc_h02(con, REGION='EUROPE', SIZE=25, TYPE='BRASS'):
+    'Minimum Cost Supplier Query (Q2)'
+
     part = con.table("part")
     supplier = con.table("supplier")
     partsupp = con.table("partsupp")
