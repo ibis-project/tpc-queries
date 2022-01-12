@@ -43,7 +43,7 @@ def tpc_h08(con,
         q.P_TYPE == TYPE
     ])
 
-    q = q.mutate(nation_volume=ibis.case().when(n2.N_NAME == NATION, q.volume).else_(0).end())
+    q = q.mutate(nation_volume=ibis.case().when(q.nation == NATION, q.volume).else_(0).end())
     gq = q.group_by([q.o_year])
     q = gq.aggregate(mkt_share=q.nation_volume.sum()/q.volume.sum())
     q = q.sort_by([q.o_year])
