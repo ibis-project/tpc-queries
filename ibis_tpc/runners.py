@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import glob
+import math
 import itertools
 import json
 import os
@@ -249,7 +250,10 @@ def compare(rows1, rows2):
                         pd = 1
                     if pd > 1e-10:
                         diffs.append(f'[{i}].{k} (float) {v1} != {v2} ({pd*100}%)')
-
+            elif isinstance(v1, float) and math.isnan(v1) and v2 is None:
+                pass
+            elif isinstance(v2, float) and math.isnan(v2) and v1 is None:
+                pass
             else:
                 if v1 != v2:
                     diffs.append(f'[{i}].{k} {v1} ({type(v1)}) != {v2} ({type(v2)})')
