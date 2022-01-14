@@ -117,7 +117,9 @@ class IbisRunner(Runner):
 
         out_txt(repr(q), outdir, f'{qid}-{self.interface}-{self.backend}-expr.txt')
 
+        boundsql = q.compile().compile(compile_kwargs=dict(literal_binds=True))
         out_sql(q.compile(), outdir, f'{qid}-{self.interface}-{self.backend}-compiled.sql')
+        out_sql(boundsql, outdir, f'{qid}-{self.interface}-{self.backend}-compiled-twice.sql')
 
         t1 = time.time()
         rows = q.execute()
