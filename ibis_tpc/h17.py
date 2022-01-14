@@ -13,16 +13,12 @@ def tpc_h17(con, BRAND='Brand#23', CONTAINER='MED BOX'):
     q = q.materialize()
 
     innerq = lineitem
-    innerq = innerq[
-        lineitem.L_EXTENDEDPRICE.name('extprice'),
-        lineitem.L_QUANTITY
-    ]
-    innerq = innerq.filter([lineitem.L_PARTKEY == q.P_PARTKEY])
+    innerq = innerq.filter([innerq.L_PARTKEY == q.P_PARTKEY])
 
     q = q.filter([
         q.P_BRAND == BRAND,
         q.P_CONTAINER == CONTAINER,
         q.L_QUANTITY < (0.2*innerq.L_QUANTITY.mean())
     ])
-    q = q.aggregate(avg_yearly=innerq.extprice.sum()/7.0)
+    q = q.aggregate(avg_yearly=q.L_EXTENDEDPRICE.sum()/7.0)
     return q
