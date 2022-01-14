@@ -10,16 +10,15 @@ def tpc_h13(con, WORD1='special', WORD2='requests'):
     customer = con.table('customer')
     orders = con.table('orders')
     innerq = customer
-    innerq = innerq.left_join(orders, customer.C_CUSTKEY == orders.O_CUSTKEY)
+    innerq = innerq.left_join(orders, (
+                customer.C_CUSTKEY == orders.O_CUSTKEY) &
+                ~orders.O_COMMENT.like(f'%{WORD1}%{WORD2}%'))
     innerq = innerq.materialize()
-    innerq = innerq.filter([
-        ~innerq.O_COMMENT.like(f'%{WORD1}%{WORD2}%')
-    ])
     innergq = innerq.group_by([innerq.C_CUSTKEY])
     innerq = innergq.aggregate(c_count=innerq.O_ORDERKEY.count())
 
     gq = innerq.group_by([innerq.c_count])
-    q = gq.aggregate(custdist=innerq.c_count.count())
+    q = gq.aggregate(custdist=innerq.count())
 
     q = q.sort_by([ibis.desc(q.custdist), ibis.desc(q.c_count)])
     return q
