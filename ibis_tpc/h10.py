@@ -11,26 +11,26 @@ def tpc_h10(con, DATE='1993-10-01'):
     nation = con.table('nation')
 
     q = customer
-    q = q.join(orders, customer.C_CUSTKEY == orders.O_CUSTKEY)
-    q = q.join(lineitem, lineitem.L_ORDERKEY == orders.O_ORDERKEY)
-    q = q.join(nation, customer.C_NATIONKEY == nation.N_NATIONKEY)
+    q = q.join(orders, customer.c_custkey == orders.o_custkey)
+    q = q.join(lineitem, lineitem.l_orderkey == orders.o_orderkey)
+    q = q.join(nation, customer.c_nationkey == nation.n_nationkey)
     q = q.materialize()
 
     q = q.filter([
-        (q.O_ORDERDATE >= DATE) & (q.O_ORDERDATE < add_date(DATE, dm=3)),
-        q.L_RETURNFLAG == 'R',
+        (q.o_orderdate >= DATE) & (q.o_orderdate < add_date(DATE, dm=3)),
+        q.l_returnflag == 'R',
     ])
 
     gq = q.group_by([
-            q.C_CUSTKEY,
-            q.C_NAME,
-            q.C_ACCTBAL,
-            q.C_PHONE,
-            q.N_NAME,
-            q.C_ADDRESS,
-            q.C_COMMENT
+            q.c_custkey,
+            q.c_name,
+            q.c_acctbal,
+            q.c_phone,
+            q.n_name,
+            q.c_address,
+            q.c_comment
     ])
-    q = gq.aggregate(revenue=(q.L_EXTENDEDPRICE*(1-q.L_DISCOUNT)).sum())
+    q = gq.aggregate(revenue=(q.l_extendedprice*(1-q.l_discount)).sum())
 
     q = q.sort_by(ibis.desc(q.revenue))
     return q.limit(20)

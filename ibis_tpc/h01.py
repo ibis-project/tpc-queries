@@ -19,18 +19,18 @@ def tpc_h01(con, DELTA=90):
     t = con.table('lineitem')
 
     interval = date.fromisoformat('1998-12-01') - timedelta(days=DELTA)
-    q = t.filter(t.L_SHIPDATE < interval)
-    discount_price = t.L_EXTENDEDPRICE*(1-t.L_DISCOUNT)
-    charge = discount_price*(1+t.L_TAX)
-    q = q.group_by(['L_RETURNFLAG', 'L_LINESTATUS'])
-    q = q.order_by(['L_RETURNFLAG', 'L_LINESTATUS'])
-    q = q.aggregate(sum_qty=t.L_QUANTITY.sum(),
-                    sum_base_price=t.L_EXTENDEDPRICE.sum(),
+    q = t.filter(t.l_shipdate < interval)
+    discount_price = t.l_extendedprice*(1-t.l_discount)
+    charge = discount_price*(1+t.l_tax)
+    q = q.group_by(['l_returnflag', 'l_linestatus'])
+    q = q.order_by(['l_returnflag', 'l_linestatus'])
+    q = q.aggregate(sum_qty=t.l_quantity.sum(),
+                    sum_base_price=t.l_extendedprice.sum(),
                     sum_disc_price=discount_price.sum(),
                     sum_charge=charge.sum(),
-                    avg_qty=t.L_QUANTITY.mean(),
-                    avg_price=t.L_EXTENDEDPRICE.mean(),
-                    avg_disc=t.L_DISCOUNT.mean(),
+                    avg_qty=t.l_quantity.mean(),
+                    avg_price=t.l_extendedprice.mean(),
+                    avg_disc=t.l_discount.mean(),
                     count_order=t.count(),
                     )
     return q

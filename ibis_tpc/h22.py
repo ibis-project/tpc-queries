@@ -8,23 +8,23 @@ def tpc_h22(con, COUNTRY_CODES=('13', '31', '23', '29', '30', '18', '17')):
     orders = con.table('orders')
 
     q = customer.filter([
-        customer.C_ACCTBAL > 0.00,
-        customer.C_PHONE.substr(0, 2).isin(COUNTRY_CODES),
+        customer.c_acctbal > 0.00,
+        customer.c_phone.substr(0, 2).isin(COUNTRY_CODES),
     ])
-    q = q.aggregate(avg_bal=customer.C_ACCTBAL.mean())
+    q = q.aggregate(avg_bal=customer.c_acctbal.mean())
 
     custsale = customer.filter([
-        customer.C_PHONE.substr(0, 2).isin(COUNTRY_CODES),
-        customer.C_ACCTBAL > q.avg_bal,
-        ~(orders.O_CUSTKEY == customer.C_CUSTKEY).any()
+        customer.c_phone.substr(0, 2).isin(COUNTRY_CODES),
+        customer.c_acctbal > q.avg_bal,
+        ~(orders.o_custkey == customer.c_custkey).any()
     ])
     custsale = custsale[
-        customer.C_PHONE.substr(0, 2).name('cntrycode'),
-        customer.C_ACCTBAL
+        customer.c_phone.substr(0, 2).name('cntrycode'),
+        customer.c_acctbal
     ]
 
     gq = custsale.group_by(custsale.cntrycode)
     outerq = gq.aggregate(numcust=custsale.count(),
-                          totacctbal=custsale.C_ACCTBAL.sum())
+                          totacctbal=custsale.c_acctbal.sum())
 
     return outerq.sort_by(outerq.cntrycode)
