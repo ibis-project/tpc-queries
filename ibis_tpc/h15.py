@@ -2,10 +2,7 @@ from .utils import add_date
 
 
 def tpc_h15(con, DATE='1996-01-01'):
-    '''Top Supplier Query (Q15)
-
-        This query determines the top supplier so it can be rewarded, given
-        more business, or identified for special recognition.'''
+    'Top Supplier Query (Q15)'
 
     lineitem = con.table('lineitem')
     supplier = con.table('supplier')
@@ -22,7 +19,14 @@ def tpc_h15(con, DATE='1996-01-01'):
     q = supplier.join(qrev, supplier.S_SUPPKEY == qrev.L_SUPPKEY)
     q = q.materialize()
     q = q.filter([
-        q.total_revenue == qrev.total_revenue.sum()
+        q.total_revenue == qrev.total_revenue.max()
     ])
     q = q.sort_by([q.S_SUPPKEY])
+    q = q[
+        q.S_SUPPKEY,
+        q.S_NAME,
+        q.S_ADDRESS,
+        q.S_PHONE,
+        q.total_revenue
+    ]
     return q
