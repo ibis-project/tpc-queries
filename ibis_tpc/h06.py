@@ -8,10 +8,10 @@ def tpc_h06(con, DATE='1994-01-01', DISCOUNT=0.06, QUANTITY=24):
     discount_min = round(DISCOUNT-.01, 2)
     discount_max = round(DISCOUNT+.01, 2)
     q = q.filter([
-                    q.L_SHIPDATE >= DATE,
-                    q.L_SHIPDATE < add_date(DATE, dy=1),
-                    q.L_DISCOUNT.between(discount_min, discount_max),
-                    q.L_QUANTITY < QUANTITY
+                    q.l_shipdate >= DATE,
+                    q.l_shipdate < add_date(DATE, dy=1),
+                    q.l_discount.between(discount_min, discount_max),
+                    q.l_quantity < QUANTITY
                     ])
-    q = q.aggregate(revenue=(q.L_EXTENDEDPRICE*q.L_DISCOUNT).sum())
+    q = q.aggregate(revenue=(q.l_extendedprice*q.l_discount).sum())
     return q

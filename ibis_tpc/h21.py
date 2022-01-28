@@ -16,28 +16,28 @@ def tpc_h21(con, NATION='SAUDI ARABIA'):
     L3 = lineitem.view()
 
     q = supplier
-    q = q.join(lineitem, supplier.S_SUPPKEY == lineitem.L_SUPPKEY)
-    q = q.join(orders, orders.O_ORDERKEY == lineitem.L_ORDERKEY)
-    q = q.join(nation, supplier.S_NATIONKEY == nation.N_NATIONKEY)
+    q = q.join(lineitem, supplier.s_suppkey == lineitem.l_suppkey)
+    q = q.join(orders, orders.o_orderkey == lineitem.l_orderkey)
+    q = q.join(nation, supplier.s_nationkey == nation.n_nationkey)
     q = q.materialize()
     q = q[
-        q.L_ORDERKEY.name("L1_ORDERKEY"),
-        q.O_ORDERSTATUS,
-        q.L_RECEIPTDATE,
-        q.L_COMMITDATE,
-        q.L_SUPPKEY.name("L1_SUPPKEY"),
-        q.S_NAME,
-        q.N_NAME,
+        q.l_orderkey.name("l1_orderkey"),
+        q.o_orderstatus,
+        q.l_receiptdate,
+        q.l_commitdate,
+        q.l_suppkey.name("l1_suppkey"),
+        q.s_name,
+        q.n_name,
     ]
     q = q.filter([
-        q.O_ORDERSTATUS == 'F',
-        q.L_RECEIPTDATE > q.L_COMMITDATE,
-        q.N_NAME == NATION,
-        ((L2.L_ORDERKEY == q.L1_ORDERKEY) & (L2.L_SUPPKEY != q.L1_SUPPKEY)).any(),
-        ~(((L3.L_ORDERKEY == q.L1_ORDERKEY) & (L3.L_SUPPKEY != q.L1_SUPPKEY) & (L3.L_RECEIPTDATE > L3.L_COMMITDATE)).any()),
+        q.o_orderstatus == 'F',
+        q.l_receiptdate > q.l_commitdate,
+        q.n_name == NATION,
+        ((L2.l_orderkey == q.l1_orderkey) & (L2.l_suppkey != q.l1_suppkey)).any(),
+        ~(((L3.l_orderkey == q.l1_orderkey) & (L3.l_suppkey != q.l1_suppkey) & (L3.l_receiptdate > L3.l_commitdate)).any()),
     ])
 
-    gq = q.group_by([q.S_NAME])
+    gq = q.group_by([q.s_name])
     q = gq.aggregate(numwait=q.count())
-    q = q.sort_by([ibis.desc(q.numwait), q.S_NAME])
+    q = q.sort_by([ibis.desc(q.numwait), q.s_name])
     return q.limit(100)

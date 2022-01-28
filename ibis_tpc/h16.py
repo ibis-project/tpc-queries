@@ -16,15 +16,15 @@ def tpc_h16(con, BRAND='Brand#45', TYPE='MEDIUM POLISHED',
     part = con.table('part')
     supplier = con.table('supplier')
 
-    q = partsupp.join(part, part.P_PARTKEY == partsupp.PS_PARTKEY)
+    q = partsupp.join(part, part.p_partkey == partsupp.ps_partkey)
     q = q.materialize()
     q = q.filter([
-        q.P_BRAND != BRAND,
-        ~q.P_TYPE.like(f'{TYPE}%'),
-        q.P_SIZE.isin(SIZES),
-        ~q.PS_SUPPKEY.isin(supplier.filter([supplier.S_COMMENT.like('%Customer%Complaints%')]).S_SUPPKEY)
+        q.p_brand != BRAND,
+        ~q.p_type.like(f'{TYPE}%'),
+        q.p_size.isin(SIZES),
+        ~q.ps_suppkey.isin(supplier.filter([supplier.s_comment.like('%customer%complaints%')]).s_suppkey)
     ])
-    gq = q.groupby([q.P_BRAND, q.P_TYPE, q.P_SIZE])
-    q = gq.aggregate(supplier_cnt=q.PS_SUPPKEY.nunique())
-    q = q.sort_by([ibis.desc(q.supplier_cnt), q.P_BRAND, q.P_TYPE, q.P_SIZE])
+    gq = q.groupby([q.p_brand, q.p_type, q.p_size])
+    q = gq.aggregate(supplier_cnt=q.ps_suppkey.nunique())
+    q = q.sort_by([ibis.desc(q.supplier_cnt), q.p_brand, q.p_type, q.p_size])
     return q

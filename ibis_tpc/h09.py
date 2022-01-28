@@ -12,22 +12,22 @@ def tpc_h09(con, COLOR='green'):
     nation = con.table('nation')
 
     q = lineitem
-    q = q.join(supplier, supplier.S_SUPPKEY == lineitem.L_SUPPKEY)
-    q = q.join(partsupp, (partsupp.PS_SUPPKEY == lineitem.L_SUPPKEY) &
-                         (partsupp.PS_PARTKEY == lineitem.L_PARTKEY))
-    q = q.join(part, part.P_PARTKEY == lineitem.L_PARTKEY)
-    q = q.join(orders, orders.O_ORDERKEY == lineitem.L_ORDERKEY)
-    q = q.join(nation, supplier.S_NATIONKEY == nation.N_NATIONKEY)
+    q = q.join(supplier, supplier.s_suppkey == lineitem.l_suppkey)
+    q = q.join(partsupp, (partsupp.ps_suppkey == lineitem.l_suppkey) &
+                         (partsupp.ps_partkey == lineitem.l_partkey))
+    q = q.join(part, part.p_partkey == lineitem.l_partkey)
+    q = q.join(orders, orders.o_orderkey == lineitem.l_orderkey)
+    q = q.join(nation, supplier.s_nationkey == nation.n_nationkey)
     q = q.materialize()
 
     q = q[
-        (q.L_EXTENDEDPRICE*(1-q.L_DISCOUNT)-q.PS_SUPPLYCOST*q.L_QUANTITY).name('amount'),
-        q.O_ORDERDATE.year().cast('string').name('o_year'),
-        q.N_NAME.name('nation'),
-        q.P_NAME
+        (q.l_extendedprice*(1-q.l_discount)-q.ps_supplycost*q.l_quantity).name('amount'),
+        q.o_orderdate.year().cast('string').name('o_year'),
+        q.n_name.name('nation'),
+        q.p_name
     ]
 
-    q = q.filter([q.P_NAME.like('%'+COLOR+'%')])
+    q = q.filter([q.p_name.like('%'+COLOR+'%')])
 
     gq = q.group_by([q.nation, q.o_year])
     q = gq.aggregate(sum_profit=q.amount.sum())

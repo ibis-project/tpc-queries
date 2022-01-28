@@ -11,45 +11,45 @@ def tpc_h02(con, REGION='EUROPE', SIZE=25, TYPE='BRASS'):
     region = con.table("region")
 
     expr = (
-        part.join(partsupp, part.P_PARTKEY == partsupp.PS_PARTKEY)
-        .join(supplier, supplier.S_SUPPKEY == partsupp.PS_SUPPKEY)
-        .join(nation, supplier.S_NATIONKEY == nation.N_NATIONKEY)
-        .join(region, nation.N_REGIONKEY == region.R_REGIONKEY)
+        part.join(partsupp, part.p_partkey == partsupp.ps_partkey)
+        .join(supplier, supplier.s_suppkey == partsupp.ps_suppkey)
+        .join(nation, supplier.s_nationkey == nation.n_nationkey)
+        .join(region, nation.n_regionkey == region.r_regionkey)
     ).materialize()
 
     subexpr = (
-        partsupp.join(supplier, supplier.S_SUPPKEY == partsupp.PS_SUPPKEY)
-        .join(nation, supplier.S_NATIONKEY == nation.N_NATIONKEY)
-        .join(region, nation.N_REGIONKEY == region.R_REGIONKEY)
+        partsupp.join(supplier, supplier.s_suppkey == partsupp.ps_suppkey)
+        .join(nation, supplier.s_nationkey == nation.n_nationkey)
+        .join(region, nation.n_regionkey == region.r_regionkey)
     ).materialize()
 
-    subexpr = subexpr[(subexpr.R_NAME == REGION) &
-                      (expr.P_PARTKEY == subexpr.PS_PARTKEY)]
+    subexpr = subexpr[(subexpr.r_name == REGION) &
+                      (expr.p_partkey == subexpr.ps_partkey)]
 
     filters = [
-        expr.P_SIZE == SIZE,
-        expr.P_TYPE.like("%"+TYPE),
-        expr.R_NAME == REGION,
-        expr.PS_SUPPLYCOST == subexpr.PS_SUPPLYCOST.min()
+        expr.p_size == SIZE,
+        expr.p_type.like("%"+TYPE),
+        expr.r_name == REGION,
+        expr.ps_supplycost == subexpr.ps_supplycost.min()
     ]
     q = expr.filter(filters)
 
     q = q.select([
-        q.S_ACCTBAL,
-        q.S_NAME,
-        q.N_NAME,
-        q.P_PARTKEY,
-        q.P_MFGR,
-        q.S_ADDRESS,
-        q.S_PHONE,
-        q.S_COMMENT,
+        q.s_acctbal,
+        q.s_name,
+        q.n_name,
+        q.p_partkey,
+        q.p_mfgr,
+        q.s_address,
+        q.s_phone,
+        q.s_comment,
     ])
 
     return q.sort_by(
                 [
-                    ibis.desc(q.S_ACCTBAL),
-                    q.N_NAME,
-                    q.S_NAME,
-                    q.P_PARTKEY,
+                    ibis.desc(q.s_acctbal),
+                    q.n_name,
+                    q.s_name,
+                    q.p_partkey,
                 ]
             ).limit(100)

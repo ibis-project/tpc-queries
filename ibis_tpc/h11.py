@@ -7,21 +7,21 @@ def tpc_h11(con, NATION='GERMANY', FRACTION=.0001):
     nation = con.table('nation')
 
     q = partsupp
-    q = q.join(supplier, partsupp.PS_SUPPKEY == supplier.S_SUPPKEY)
-    q = q.join(nation, nation.N_NATIONKEY == supplier.S_NATIONKEY)
+    q = q.join(supplier, partsupp.ps_suppkey == supplier.s_suppkey)
+    q = q.join(nation, nation.n_nationkey == supplier.s_nationkey)
     q = q.materialize()
 
-    q = q.filter([q.N_NAME == NATION])
+    q = q.filter([q.n_name == NATION])
 
     innerq = partsupp
-    innerq = innerq.join(supplier, partsupp.PS_SUPPKEY == supplier.S_SUPPKEY)
-    innerq = innerq.join(nation, nation.N_NATIONKEY == supplier.S_NATIONKEY)
+    innerq = innerq.join(supplier, partsupp.ps_suppkey == supplier.s_suppkey)
+    innerq = innerq.join(nation, nation.n_nationkey == supplier.s_nationkey)
     innerq = innerq.materialize()
-    innerq = innerq.filter([innerq.N_NAME == NATION])
-    innerq = innerq.aggregate(total=(innerq.PS_SUPPLYCOST * innerq.PS_AVAILQTY).sum())
+    innerq = innerq.filter([innerq.n_name == NATION])
+    innerq = innerq.aggregate(total=(innerq.ps_supplycost * innerq.ps_availqty).sum())
 
-    gq = q.group_by([q.PS_PARTKEY])
-    q = gq.aggregate(value=(q.PS_SUPPLYCOST * q.PS_AVAILQTY).sum())
+    gq = q.group_by([q.ps_partkey])
+    q = gq.aggregate(value=(q.ps_supplycost * q.ps_availqty).sum())
     q = q.filter([q.value > innerq.total * FRACTION])
     q = q.sort_by(ibis.desc(q.value))
     return q

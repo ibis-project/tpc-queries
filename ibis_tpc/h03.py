@@ -9,16 +9,16 @@ def tpc_h03(con, MKTSEGMENT='BUILDING', DATE='1995-03-15'):
     orders = con.table('orders')
     lineitem = con.table('lineitem')
 
-    q = customer.join(orders, customer.C_CUSTKEY == orders.O_CUSTKEY)
-    q = q.join(lineitem, lineitem.L_ORDERKEY == orders.O_ORDERKEY).materialize()
+    q = customer.join(orders, customer.c_custkey == orders.o_custkey)
+    q = q.join(lineitem, lineitem.l_orderkey == orders.o_orderkey).materialize()
     q = q.filter([
-        q.C_MKTSEGMENT == MKTSEGMENT,
-        q.O_ORDERDATE < DATE,
-        q.L_SHIPDATE > DATE
+        q.c_mktsegment == MKTSEGMENT,
+        q.o_orderdate < DATE,
+        q.l_shipdate > DATE
     ])
-    qg = q.group_by([q.L_ORDERKEY, q.O_ORDERDATE, q.O_SHIPPRIORITY])
-    q = qg.aggregate(revenue=(q.L_EXTENDEDPRICE * (1 - q.L_DISCOUNT)).sum())
-    q = q.sort_by([ibis.desc(q.revenue), q.O_ORDERDATE])
+    qg = q.group_by([q.l_orderkey, q.o_orderdate, q.o_shippriority])
+    q = qg.aggregate(revenue=(q.l_extendedprice * (1 - q.l_discount)).sum())
+    q = q.sort_by([ibis.desc(q.revenue), q.o_orderdate])
     q = q.limit(10)
 
     return q

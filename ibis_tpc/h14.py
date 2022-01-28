@@ -10,15 +10,15 @@ def tpc_h14(con, DATE='1995-09-01'):
     lineitem = con.table('lineitem')
     part = con.table('part')
     q = lineitem
-    q = q.join(part, lineitem.L_PARTKEY == part.P_PARTKEY)
+    q = q.join(part, lineitem.l_partkey == part.p_partkey)
     q = q.materialize()
     q = q.filter([
-        q.L_SHIPDATE >= DATE,
-        q.L_SHIPDATE < add_date(DATE, dm=1)
+        q.l_shipdate >= DATE,
+        q.l_shipdate < add_date(DATE, dm=1)
     ])
 
-    revenue = q.L_EXTENDEDPRICE*(1-q.L_DISCOUNT)
-    promo_revenue = q.P_TYPE.like('PROMO%').ifelse(revenue, 0)
+    revenue = q.l_extendedprice*(1-q.l_discount)
+    promo_revenue = q.p_type.like('promo%').ifelse(revenue, 0)
 
     q = q.aggregate(promo_revenue=100*promo_revenue.sum()/revenue.sum())
     return q

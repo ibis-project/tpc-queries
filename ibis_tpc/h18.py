@@ -12,19 +12,19 @@ def tpc_h18(con, QUANTITY=300):
     orders = con.table('orders')
     lineitem = con.table('lineitem')
 
-    subgq = lineitem.groupby([lineitem.L_ORDERKEY])
-    subq = subgq.aggregate(qty_sum=lineitem.L_QUANTITY.sum())
+    subgq = lineitem.groupby([lineitem.l_orderkey])
+    subq = subgq.aggregate(qty_sum=lineitem.l_quantity.sum())
     subq = subq.filter([subq.qty_sum > QUANTITY])
 
     q = customer
-    q = q.join(orders, customer.C_CUSTKEY == orders.O_CUSTKEY)
-    q = q.join(lineitem, orders.O_ORDERKEY == lineitem.L_ORDERKEY)
+    q = q.join(orders, customer.c_custkey == orders.o_custkey)
+    q = q.join(lineitem, orders.o_orderkey == lineitem.l_orderkey)
     q = q.materialize()
     q = q.filter([
-        q.O_ORDERKEY.isin(subq.L_ORDERKEY)
+        q.o_orderkey.isin(subq.l_orderkey)
     ])
 
-    gq = q.groupby([q.C_NAME, q.C_CUSTKEY, q.O_ORDERKEY, q.O_ORDERDATE, q.O_TOTALPRICE])
-    q = gq.aggregate(sum_qty=q.L_QUANTITY.sum())
-    q = q.sort_by([ibis.desc(q.O_TOTALPRICE), q.O_ORDERDATE])
+    gq = q.groupby([q.c_name, q.c_custkey, q.o_orderkey, q.o_orderdate, q.o_totalprice])
+    q = gq.aggregate(sum_qty=q.l_quantity.sum())
+    q = q.sort_by([ibis.desc(q.o_totalprice), q.o_orderdate])
     return q.limit(100)
