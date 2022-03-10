@@ -1,17 +1,17 @@
 SELECT cntrycode,
-       count(*) AS numcust,
-       sum(c_acctbal) AS totacctbal
+       COUNT(*) AS numcust,
+       SUM(c_acctbal) AS totacctbal
 FROM
-  (SELECT substring(c_phone, 1, 2) AS cntrycode,
+  (SELECT SUBSTR(c_phone, 1, 2) AS cntrycode,
           c_acctbal
    FROM customer
-   WHERE substring(c_phone, 1, 2)
+   WHERE SUBSTR(c_phone, 1, 2)
         IN ('13', '31', '23', '29', '30', '18', '17')
      AND c_acctbal >
-       (SELECT avg(c_acctbal)
+       (SELECT AVG(c_acctbal)
         FROM customer
         WHERE c_acctbal > 0.00
-          AND SUBSTRING (c_phone, 1, 2)
+          AND SUBSTR(c_phone, 1, 2)
             IN ('13', '31', '23', '29', '30', '18', '17') )
      AND NOT EXISTS
        (SELECT *
