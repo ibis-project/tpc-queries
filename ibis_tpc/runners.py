@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import glob
 import math
 import itertools
@@ -290,9 +291,12 @@ def main(qids, db, outdir, interfaces, backend, verbose, debug):
         qids = sorted(list(set(Path(fn).stem for fn in glob.glob('sqlite_tpc/*.sql') if '.' in fn)))
 
     if not interfaces:
-        interfaces = ['sqlite', 'ibis', 'sqlalchemy', 'dplyr', 'dbplyr']
+        interfaces = ['sqlite', 'ibis', 'dplyr', 'dbplyr']
 
     runners = [globals()['setup_'+interface](interface=interface, backend=backend) for interface in interfaces]
+
+    nerrs = 0
+    ndiffs = 0
 
     for qid in qids:
         results = []
@@ -314,6 +318,7 @@ def main(qids, db, outdir, interfaces, backend, verbose, debug):
                     diffs = compare(results[0], rows)
                     out_txt('\n'.join(diffs), outdir, f'{qid}-{interface}-{backend}-diffs.txt')
                     info['ndiffs'] = len(diffs)
+                    ndiffs += len(diffs)
 
                 results.append(rows)
             except KeyboardInterrupt:
@@ -326,6 +331,7 @@ def main(qids, db, outdir, interfaces, backend, verbose, debug):
 
             if runner.errors:
                 info['errors'] = '; '.join(runner.errors)
+                nerrs += len(runner.errors)
 
             if verbose > 0 and runner.warns:
                 info['warns'] = '; '.join(runner.warns)
@@ -343,6 +349,9 @@ def main(qids, db, outdir, interfaces, backend, verbose, debug):
             print('  '.join(f'{k}:{fmt(v)}' for k, v in info.items()))
 
             runner.teardown()
+
+    if nerrs > 0 or ndiffs > 0:
+        raise click.ClickException(f'{nerrs} errors, {ndiffs} diffs')
 
 
 if __name__ == '__main__':
