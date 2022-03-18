@@ -1,22 +1,28 @@
 import ibis
 
 
-def tpc_h11(con, NATION='GERMANY', FRACTION=.0001):
-    partsupp = con.table('partsupp')
-    supplier = con.table('supplier')
-    nation = con.table('nation')
+def tpc_h11(con, NATION="GERMANY", FRACTION=0.0001):
+    partsupp = con.table("partsupp")
+    supplier = con.table("supplier")
+    nation = con.table("nation")
+
+    tables = (partsupp, supplier, nation)
+
+    return _tpc_h11(tables, NATION, FRACTION)
+
+
+def _tpc_h11(tables, NATION="GERMANY", FRACTION=0.0001):
+    partsupp, supplier, nation = tables
 
     q = partsupp
     q = q.join(supplier, partsupp.ps_suppkey == supplier.s_suppkey)
     q = q.join(nation, nation.n_nationkey == supplier.s_nationkey)
-    q = q.materialize()
 
     q = q.filter([q.n_name == NATION])
 
     innerq = partsupp
     innerq = innerq.join(supplier, partsupp.ps_suppkey == supplier.s_suppkey)
     innerq = innerq.join(nation, nation.n_nationkey == supplier.s_nationkey)
-    innerq = innerq.materialize()
     innerq = innerq.filter([innerq.n_name == NATION])
     innerq = innerq.aggregate(total=(innerq.ps_supplycost * innerq.ps_availqty).sum())
 
