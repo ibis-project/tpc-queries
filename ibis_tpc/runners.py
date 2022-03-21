@@ -241,8 +241,13 @@ def compare(rows1, rows2):
         for k in keys:
             v1 = lcr1.get(k, None)
             v2 = lcr2.get(k, None)
-            if isinstance(v2, pandas.Timestamp):
-                if v1 != v2.strftime('%Y-%m-%d'):
+            if any(map(lambda x: isinstance(x, pandas.Timestamp), (v1, v2))):
+                v1, v2 = map(
+                    lambda x:
+                    x.strftime('%Y-%m-%d')
+                    if isinstance(x, pandas.Timestamp)
+                    else x, (v1, v2))
+                if v1 != v2:
                     diffs.append(f'[{i}].{k} (date) {v1} != {v2}')
             elif isinstance(v1, float) and isinstance(v2, float):
                 if v2 != v1:
