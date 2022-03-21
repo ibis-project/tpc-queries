@@ -9,11 +9,18 @@ def tpc_h13(con, WORD1='special', WORD2='requests'):
 
     customer = con.table('customer')
     orders = con.table('orders')
+
+    tables = (customer, orders)
+
+    return _tpc_h13(tables, WORD1, WORD2)
+
+
+def _tpc_h13(tables, WORD1='special', WORD2='requests'):
+    customer, orders = tables
     innerq = customer
     innerq = innerq.left_join(orders, (
                 customer.c_custkey == orders.o_custkey) &
                 ~orders.o_comment.like(f'%{WORD1}%{WORD2}%'))
-    innerq = innerq.materialize()
     innergq = innerq.group_by([innerq.c_custkey])
     innerq = innergq.aggregate(c_count=innerq.o_orderkey.count())
 

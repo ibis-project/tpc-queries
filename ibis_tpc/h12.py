@@ -10,9 +10,16 @@ def tpc_h12(con, SHIPMODE1='MAIL', SHIPMODE2='SHIP', DATE='1994-01-01'):
 
     orders = con.table('orders')
     lineitem = con.table('lineitem')
+
+    tables = (orders, lineitem)
+
+    return _tpc_h12(tables, SHIPMODE1, SHIPMODE2, DATE)
+
+
+def _tpc_h12(tables, SHIPMODE1='MAIL', SHIPMODE2='SHIP', DATE='1994-01-01'):
+    orders, lineitem = tables
     q = orders
     q = q.join(lineitem, orders.o_orderkey == lineitem.l_orderkey)
-    q = q.materialize()
 
     q = q.filter([
         q.l_shipmode.isin([SHIPMODE1, SHIPMODE2]),

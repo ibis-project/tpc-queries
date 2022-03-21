@@ -1,24 +1,28 @@
 from .utils import add_date
 
 
-def tpc_h14(con, DATE='1995-09-01'):
-    '''Promotion Effect Query (Q14)
+def tpc_h14(con, DATE="1995-09-01"):
+    """Promotion Effect Query (Q14)
 
-       This query monitors the market response to a promotion such as TV
-       advertisements or a special campaign.'''
+    This query monitors the market response to a promotion such as TV
+    advertisements or a special campaign."""
 
-    lineitem = con.table('lineitem')
-    part = con.table('part')
+    lineitem = con.table("lineitem")
+    part = con.table("part")
+
+    tables = (lineitem, part)
+
+    return _tpc_h14(tables, DATE)
+
+
+def _tpc_h14(tables, DATE="1995-09-01"):
+    lineitem, part = tables
     q = lineitem
     q = q.join(part, lineitem.l_partkey == part.p_partkey)
-    q = q.materialize()
-    q = q.filter([
-        q.l_shipdate >= DATE,
-        q.l_shipdate < add_date(DATE, dm=1)
-    ])
+    q = q.filter([q.l_shipdate >= DATE, q.l_shipdate < add_date(DATE, dm=1)])
 
-    revenue = q.l_extendedprice*(1-q.l_discount)
-    promo_revenue = q.p_type.like('promo%').ifelse(revenue, 0)
+    revenue = q.l_extendedprice * (1 - q.l_discount)
+    promo_revenue = q.p_type.like("promo%").ifelse(revenue, 0)
 
-    q = q.aggregate(promo_revenue=100*promo_revenue.sum()/revenue.sum())
+    q = q.aggregate(promo_revenue=100 * promo_revenue.sum() / revenue.sum())
     return q
