@@ -26,7 +26,7 @@ def tpc_h16(
             q.p_size.isin(SIZES),
             ~q.ps_suppkey.isin(
                 supplier.filter(
-                    [supplier.s_comment.like("%customer%complaints%")]
+                    [supplier.s_comment.like("%Customer%Complaints%")]
                 ).s_suppkey
             ),
         ]

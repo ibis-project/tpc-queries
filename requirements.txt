@@ -3,5 +3,6 @@ click
 pandas
 ibis-framework[sqlite]
 sqlparse
+python-dateutil
 duckdb
 duckdb-engine
