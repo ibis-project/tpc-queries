@@ -16,21 +16,23 @@ import ibis
 
 g_debug = False
 
+
 def fmt(v):
     if isinstance(v, float):
-        return '%.03f' % v
+        return "%.03f" % v
     else:
         return str(v)
 
 
 def out_txt(s, outdir, fn):
     if outdir:
-        print(s, file=open(Path(outdir)/fn, mode='w'), flush=True)
+        print(s, file=open(Path(outdir) / fn, mode="w"), flush=True)
 
 
 def out_sql(sql, outdir, fn):
     import sqlparse
-    sql = sqlparse.format(str(sql), reindent=True, keyword_case='upper')
+
+    sql = sqlparse.format(str(sql), reindent=True, keyword_case="upper")
 
     out_txt(sql, outdir, fn)
 
@@ -43,20 +45,20 @@ def out_jsonl(rows: List[Dict[str, Any]], outdir, fn):
             return json.JSONEncoder.default(self, obj)
 
     if outdir:
-        with open(Path(outdir)/fn, mode='w') as fp:
+        with open(Path(outdir) / fn, mode="w") as fp:
             for r in rows:
                 print(json.dumps(r, cls=DateEncoder), file=fp, flush=True)
 
 
 class Runner:
-    def __init__(self, interface='sqlite', backend='sqlite'):
+    def __init__(self, interface="sqlite", backend="sqlite"):
         self.interface = interface
         self.backend = backend
         self.prints = []
         self.warns = []
         self.errors = []
 
-    def setup(self, db='tpch.db'):
+    def setup(self, db="tpch.db"):
         self.prints = []
         self.warns = []
         self.errors = []
@@ -64,7 +66,7 @@ class Runner:
     def teardown(self):
         pass
 
-    def run(self, qid, outdir=None, backend='sqlite'):
+    def run(self, qid, outdir=None, backend="sqlite"):
         pass
 
     def print(self, s):
@@ -81,85 +83,98 @@ class Runner:
 
 
 class SqliteRunner(Runner):
-    def setup(self, db='tpch.db'):
+    def setup(self, db="tpch.db"):
         super().setup(db=db)
         import sqlite3
 
         self.con = sqlite3.connect(db)
         self.con.row_factory = sqlite3.Row
 
-    def run(self, qid, outdir=None, backend='sqlite'):
+    def run(self, qid, outdir=None, backend="sqlite"):
         cur = self.con.cursor()
 
-        sql = open(f'sqlite_tpc/{qid}.sql').read()
+        sql = open(f"sqlite_tpc/{qid}.sql").read()
         t1 = time.time()
         cur.execute(sql)
         rows = cur.fetchall()
         t2 = time.time()
         rows = list(dict(r) for r in rows)
-        return rows, t2-t1
+        return rows, t2 - t1
 
     def info(self):
         import sqlite3
-        return dict(interface=self.interface,
-                    backend=f'{self.backend}',
-                    sqlite_version=sqlite3.sqlite_version)
+
+        return dict(
+            interface=self.interface,
+            backend=f"{self.backend}",
+            sqlite_version=sqlite3.sqlite_version,
+        )
 
 
 class IbisRunner(Runner):
-    def setup(self, db='tpch.db'):
+    def setup(self, db="tpch.db"):
         super().setup(db=db)
         self.con = getattr(ibis, self.backend).connect(db)
 
-    def run(self, qid, outdir=None, backend='sqlite'):
+    def run(self, qid, outdir=None, backend="sqlite"):
         import importlib
-        mod = importlib.import_module(f'.{qid}', package='ibis_tpc')
-        q = getattr(mod, f'tpc_{qid}')(self.con)
 
-        out_txt(repr(q), outdir, f'{qid}-{self.interface}-{self.backend}-expr.txt')
+        mod = importlib.import_module(f".{qid}", package="ibis_tpc")
+        q = getattr(mod, f"tpc_{qid}")(self.con)
+
+        out_txt(repr(q), outdir, f"{qid}-{self.interface}-{self.backend}-expr.txt")
 
         boundsql = q.compile().compile(compile_kwargs=dict(literal_binds=True))
-        out_sql(q.compile(), outdir, f'{qid}-{self.interface}-{self.backend}-compiled.sql')
-        out_sql(boundsql, outdir, f'{qid}-{self.interface}-{self.backend}-compiled-twice.sql')
+        out_sql(
+            q.compile(), outdir, f"{qid}-{self.interface}-{self.backend}-compiled.sql"
+        )
+        out_sql(
+            boundsql,
+            outdir,
+            f"{qid}-{self.interface}-{self.backend}-compiled-twice.sql",
+        )
 
         t1 = time.time()
         rows = q.execute()
         t2 = time.time()
 
-        return rows.to_dict('records'), t2-t1
+        return rows.to_dict("records"), t2 - t1
 
 
 class SqlAlchemyRunner(Runner):
-    def setup(self, db='tpch.db'):
+    def setup(self, db="tpch.db"):
         super().setup(db=db)
 
         from sqlalchemy import create_engine, MetaData
-        self.engine = create_engine(f'sqlite:///{db}')
+
+        self.engine = create_engine(f"sqlite:///{db}")
         self.metadata = MetaData(self.engine)
 
     def table(self, tblname):
         from sqlalchemy import Table
+
         return Table(tblname, self.metadata, autoload=True)
 
-    def run(self, qid, outdir=None, backend='sqlite'):
+    def run(self, qid, outdir=None, backend="sqlite"):
         import importlib
-        mod = importlib.import_module(f'.{qid}', package='sqlalchemy_tpc')
-        q = getattr(mod, f'tpc_{qid}')(self)
+
+        mod = importlib.import_module(f".{qid}", package="sqlalchemy_tpc")
+        q = getattr(mod, f"tpc_{qid}")(self)
 
         sql = q.compile(self.engine, compile_kwargs=dict(literal_binds=True))
-        out_sql(sql, outdir, f'{qid}-{self.interface}-{self.backend}-compiled.sql')
+        out_sql(sql, outdir, f"{qid}-{self.interface}-{self.backend}-compiled.sql")
 
         t1 = time.time()
         rows = q.execute()
         t2 = time.time()
 
-        return list(dict(r) for r in rows), t2-t1
+        return list(dict(r) for r in rows), t2 - t1
 
 
 class RRunner(Runner):
-    def setup(self, db='tpch.db'):
+    def setup(self, db="tpch.db"):
         super().setup(db=db)
-        os.putenv('R_LIBS_SITE', '/usr/lib/R/library')  # skip warnings
+        os.putenv("R_LIBS_SITE", "/usr/lib/R/library")  # skip warnings
 
         import rpy2
         import rpy2.robjects
@@ -171,49 +186,51 @@ class RRunner(Runner):
         rpy2.rinterface_lib.callbacks.consolewrite_print = self.print
         rpy2.rinterface_lib.callbacks.consolewrite_warnerror = self.warn
 
-        pkgs = ('dplyr', 'dbplyr', 'lubridate', 'DBI', 'RSQLite')
+        pkgs = ("dplyr", "dbplyr", "lubridate", "DBI", "RSQLite")
         names_to_install = [x for x in pkgs if not rpackages.isinstalled(x)]
 
         if names_to_install:
             from rpy2.robjects.vectors import StrVector
-            utils = rpackages.importr('utils')
+
+            utils = rpackages.importr("utils")
             utils.chooseCRANmirror(ind=1)  # select first mirror in the list
             utils.install_packages(StrVector(names_to_install))
 
         r = rpy2.robjects.r
-        r['source']('dplyr_tpc/init.R')
+        r["source"]("dplyr_tpc/init.R")
 
-        self.query_dbplyr = rpy2.robjects.globalenv['query_dbplyr']
-        self.query_dplyr = rpy2.robjects.globalenv['query_dplyr']
-        self.query_sql = rpy2.robjects.globalenv['query_sql']
+        self.query_dbplyr = rpy2.robjects.globalenv["query_dbplyr"]
+        self.query_dplyr = rpy2.robjects.globalenv["query_dplyr"]
+        self.query_sql = rpy2.robjects.globalenv["query_sql"]
 
-        self.con = rpy2.robjects.globalenv['setup_sqlite'](db)
+        self.con = rpy2.robjects.globalenv["setup_sqlite"](db)
 
     def teardown(self):
         super().teardown()
         import rpy2.robjects
-        rpy2.robjects.globalenv['teardown_sqlite'](self.con)
 
-    def run(self, qid, outdir=None, backend='sqlite'):
+        rpy2.robjects.globalenv["teardown_sqlite"](self.con)
+
+    def run(self, qid, outdir=None, backend="sqlite"):
         import rpy2.robjects
 
         r = rpy2.robjects.r
-        fn = f'dplyr_tpc/{qid}.R'
+        fn = f"dplyr_tpc/{qid}.R"
 
         if not Path(fn).exists():
             raise FileNotFoundError(fn)
 
-        r['source'](fn)
-        func = rpy2.robjects.globalenv[f'tpc_{qid}']
+        r["source"](fn)
+        func = rpy2.robjects.globalenv[f"tpc_{qid}"]
 
         sql = self.query_sql(self.con, func)[0]
-        out_sql(sql, outdir, f'{qid}-{self.interface}-{self.backend}.sql')
+        out_sql(sql, outdir, f"{qid}-{self.interface}-{self.backend}.sql")
 
         t1 = time.time()
-        res = rpy2.robjects.globalenv['query_'+self.interface](self.con, func)
+        res = rpy2.robjects.globalenv["query_" + self.interface](self.con, func)
         t2 = time.time()
 
-        return res.to_dict('records'), t2-t1
+        return res.to_dict("records"), t2 - t1
 
 
 setup_sqlite = SqliteRunner
@@ -227,11 +244,11 @@ def compare(rows1, rows2):
     diffs = []
     for i, (r1, r2) in enumerate(itertools.zip_longest(rows1, rows2)):
         if r1 is None:
-            diffs.append(f'[{i}]  extra row: {r2}')
+            diffs.append(f"[{i}]  extra row: {r2}")
             continue
 
         if r2 is None:
-            diffs.append(f'[{i}]  extra row: {r1}')
+            diffs.append(f"[{i}]  extra row: {r1}")
             continue
 
         lcr1 = {k.lower(): v for k, v in r1.items()}
@@ -242,45 +259,63 @@ def compare(rows1, rows2):
             v1 = lcr1.get(k, None)
             v2 = lcr2.get(k, None)
             if isinstance(v2, pandas.Timestamp):
-                if v1 != v2.strftime('%Y-%m-%d'):
-                    diffs.append(f'[{i}].{k} (date) {v1} != {v2}')
+                if v1 != v2.strftime("%Y-%m-%d"):
+                    diffs.append(f"[{i}].{k} (date) {v1} != {v2}")
             elif isinstance(v1, float) and isinstance(v2, float):
                 if v2 != v1:
                     if v1:
                         dv = abs(v2 - v1)
-                        pd = dv/v1
+                        pd = dv / v1
                     else:
                         pd = 1
                     if pd > 1e-10:
-                        diffs.append(f'[{i}].{k} (float) {v1} != {v2} ({pd*100}%)')
+                        diffs.append(f"[{i}].{k} (float) {v1} != {v2} ({pd*100}%)")
             elif isinstance(v1, float) and math.isnan(v1) and v2 is None:
                 pass
             elif isinstance(v2, float) and math.isnan(v2) and v1 is None:
                 pass
             else:
                 if v1 != v2:
-                    diffs.append(f'[{i}].{k} {v1} ({type(v1)}) != {v2} ({type(v2)})')
+                    diffs.append(f"[{i}].{k} {v1} ({type(v1)}) != {v2} ({type(v2)})")
 
     return diffs
 
 
 @click.command()
-@click.argument('qids', nargs=-1)
-@click.option('-d', '--db', default='tpch.db', help='connection string for db to run queries against')
-@click.option('-b', '--backend', default='sqlite', help='backend to use with given db')
-@click.option('-i', '--interface', 'interfaces', multiple=True, help='interface to use with backend: sqlite|ibis|dplyr|dbplyr')
-@click.option('-o', '--output', 'outdir', type=click.Path(), default=None, help='directory to save intermediate and debug outputs')
-@click.option('-v', '--verbose', count=True, help='display more information on stdout')
-@click.option('--debug', is_flag=True, help='abort on error and print backtrace')
+@click.argument("qids", nargs=-1)
+@click.option(
+    "-d",
+    "--db",
+    default="tpch.db",
+    help="connection string for db to run queries against",
+)
+@click.option("-b", "--backend", default="sqlite", help="backend to use with given db")
+@click.option(
+    "-i",
+    "--interface",
+    "interfaces",
+    multiple=True,
+    help="interface to use with backend: sqlite|ibis|dplyr|dbplyr",
+)
+@click.option(
+    "-o",
+    "--output",
+    "outdir",
+    type=click.Path(),
+    default=None,
+    help="directory to save intermediate and debug outputs",
+)
+@click.option("-v", "--verbose", count=True, help="display more information on stdout")
+@click.option("--debug", is_flag=True, help="abort on error and print backtrace")
 def main(qids, db, outdir, interfaces, backend, verbose, debug):
     if outdir:
         os.makedirs(outdir, exist_ok=True)
         try:
-            os.remove(Path(outdir)/'benchmarks.jsonl')
+            os.remove(Path(outdir) / "benchmarks.jsonl")
         except FileNotFoundError:
             pass
         try:
-            os.remove(Path(outdir)/'benchmarks.txt')
+            os.remove(Path(outdir) / "benchmarks.txt")
         except FileNotFoundError:
             pass
 
@@ -288,12 +323,19 @@ def main(qids, db, outdir, interfaces, backend, verbose, debug):
     g_debug = debug
 
     if not qids:
-        qids = sorted(list(set(Path(fn).stem for fn in glob.glob('sqlite_tpc/*.sql') if '.' in fn)))
+        qids = sorted(
+            list(
+                set(Path(fn).stem for fn in glob.glob("sqlite_tpc/*.sql") if "." in fn)
+            )
+        )
 
     if not interfaces:
-        interfaces = ['sqlite', 'ibis', 'dplyr', 'dbplyr']
+        interfaces = ["sqlite", "ibis", "dplyr", "dbplyr"]
 
-    runners = [globals()['setup_'+interface](interface=interface, backend=backend) for interface in interfaces]
+    runners = [
+        globals()["setup_" + interface](interface=interface, backend=backend)
+        for interface in interfaces
+    ]
 
     nerrs = 0
     ndiffs = 0
@@ -308,16 +350,20 @@ def main(qids, db, outdir, interfaces, backend, verbose, debug):
 
             try:
                 rows, elapsed_s = runner.run(qid, backend=backend, outdir=outdir)
-                out_jsonl(rows, outdir, f'{qid}-{interface}-{backend}-results.jsonl')
+                out_jsonl(rows, outdir, f"{qid}-{interface}-{backend}-results.jsonl")
 
-                info['nrows'] = len(rows)
-                info['elapsed_s'] = elapsed_s
+                info["nrows"] = len(rows)
+                info["elapsed_s"] = elapsed_s
 
                 # first interface is baseline for correctness
                 if results:
                     diffs = compare(results[0], rows)
-                    out_txt('\n'.join(diffs), outdir, f'{qid}-{interface}-{backend}-diffs.txt')
-                    info['ndiffs'] = len(diffs)
+                    out_txt(
+                        "\n".join(diffs),
+                        outdir,
+                        f"{qid}-{interface}-{backend}-diffs.txt",
+                    )
+                    info["ndiffs"] = len(diffs)
                     ndiffs += len(diffs)
 
                 results.append(rows)
@@ -327,32 +373,32 @@ def main(qids, db, outdir, interfaces, backend, verbose, debug):
                 if g_debug:
                     raise
                 rows = []
-                runner.error(type(e).__name__ + ': ' + str(e))
+                runner.error(type(e).__name__ + ": " + str(e))
 
             if runner.errors:
-                info['errors'] = '; '.join(runner.errors)
+                info["errors"] = "; ".join(runner.errors)
                 nerrs += len(runner.errors)
 
             if verbose > 0 and runner.warns:
-                info['warns'] = '; '.join(runner.warns)
+                info["warns"] = "; ".join(runner.warns)
 
             if verbose > 1 and runner.prints:
-                info['prints'] = '; '.join(runner.prints)
+                info["prints"] = "; ".join(runner.prints)
 
             if outdir:
-                with open(Path(outdir)/'benchmarks.txt', mode='a') as fp:
-                    print('  '.join(f'{k}:{fmt(v)}' for k, v in info.items()), file=fp)
+                with open(Path(outdir) / "benchmarks.txt", mode="a") as fp:
+                    print("  ".join(f"{k}:{fmt(v)}" for k, v in info.items()), file=fp)
 
-                with open(Path(outdir)/'benchmarks.jsonl', mode='a') as fp:
+                with open(Path(outdir) / "benchmarks.jsonl", mode="a") as fp:
                     print(json.dumps(info), file=fp)
 
-            print('  '.join(f'{k}:{fmt(v)}' for k, v in info.items()))
+            print("  ".join(f"{k}:{fmt(v)}" for k, v in info.items()))
 
             runner.teardown()
 
     if nerrs > 0 or ndiffs > 0:
-        raise click.ClickException(f'{nerrs} errors, {ndiffs} diffs')
+        raise click.ClickException(f"{nerrs} errors, {ndiffs} diffs")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

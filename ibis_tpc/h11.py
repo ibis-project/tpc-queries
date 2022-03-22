@@ -1,10 +1,10 @@
 import ibis
 
 
-def tpc_h11(con, NATION='GERMANY', FRACTION=.0001):
-    partsupp = con.table('partsupp')
-    supplier = con.table('supplier')
-    nation = con.table('nation')
+def tpc_h11(con, NATION="GERMANY", FRACTION=0.0001):
+    partsupp = con.table("partsupp")
+    supplier = con.table("supplier")
+    nation = con.table("nation")
 
     q = partsupp
     q = q.join(supplier, partsupp.ps_suppkey == supplier.s_suppkey)
