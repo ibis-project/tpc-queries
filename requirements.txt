@@ -3,3 +3,5 @@ click
 pandas
 ibis-framework[sqlite]
 sqlparse
+duckdb
+duckdb-engine

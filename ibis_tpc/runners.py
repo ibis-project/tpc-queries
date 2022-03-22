@@ -111,6 +111,25 @@ class SqliteRunner(Runner):
         )
 
 
+class DuckDBRunner(Runner):
+    def setup(self, db='tpch.ddb'):
+        super().setup(db=db)
+        import duckdb
+
+        self.con = duckdb.connect(db)
+
+    def run(self, qid, outdir=None, backend='duckdb'):
+        cur = self.con.cursor()
+
+        sql = open(f'duckdb_tpc/{qid}.sql').read()
+        t1 = time.time()
+        cur.execute(sql)
+        rows = cur.fetch_df()
+        t2 = time.time()
+        rows = rows.to_dict('records')
+        return rows, t2-t1
+
+
 class IbisRunner(Runner):
     def setup(self, db="tpch.db"):
         super().setup(db=db)
@@ -236,6 +255,7 @@ class RRunner(Runner):
 setup_sqlite = SqliteRunner
 setup_ibis = IbisRunner
 setup_sqlalchemy = SqlAlchemyRunner
+setup_duckdb = DuckDBRunner
 setup_dplyr = RRunner
 setup_dbplyr = RRunner
 
