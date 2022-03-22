@@ -53,18 +53,3 @@ def con():
 @pytest.fixture(scope="module")
 def compiler():
     yield SubstraitCompiler()
-
-
-def pytest_runtest_call(item):
-    """Dynamically add various custom markers."""
-
-    for marker in item.iter_markers(name="duckdb_internal_error"):
-        item.add_marker(pytest.mark.xfail(reason="DuckDB Internal Error"))
-    for marker in item.iter_markers(name="corr_sub_query"):
-        item.add_marker(
-            pytest.mark.xfail(reason="Substrait doesn't support correlated subqueries")
-        )
-    for marker in item.iter_markers(name="duckdb_catalog_error"):
-        item.add_marker(pytest.mark.xfail(reason="DuckDB Catalog Error"))
-    for marker in item.iter_markers(name="ibis_substrait_error"):
-        item.add_marker(pytest.mark.xfail(reason="Ibis substrait compilation failure"))

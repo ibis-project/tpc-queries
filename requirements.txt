@@ -4,3 +4,5 @@ pandas
 ibis-framework[sqlite,duckdb]
 sqlparse
 python-dateutil
+duckdb
+duckdb-engine

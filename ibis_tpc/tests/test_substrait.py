@@ -1,154 +1,267 @@
 import importlib
+from contextlib import nullcontext
 from datetime import date
 
 import ibis_tpc
 import pytest
-
 
 modules = list(map(lambda x: f"ibis_tpc.h{x:02d}", range(1, 23)))
 
 for module in modules:
     importlib.import_module(module)
 
-test_params = [
+serialize_deserialize = [
     pytest.param(
-        ibis_tpc.h01._tpc_h01,
-        ("lineitem",),
+        ibis_tpc.h01.tpc_h01,
         {"DATE": date(1998, 12, 1)},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(
+            RuntimeError, match=r".*Only single grouping sets are supported.*"
+        ),
     ),
     pytest.param(
-        ibis_tpc.h02._tpc_h02,
-        ("part", "supplier", "partsupp", "nation", "region"),
+        ibis_tpc.h02.tpc_h02,
         {},
-        marks=[pytest.mark.corr_sub_query],
+        pytest.raises(TypeError, match=r".*must be instance of same class.*"),
     ),
     pytest.param(
-        ibis_tpc.h03._tpc_h03,
-        ("customer", "orders", "lineitem"),
+        ibis_tpc.h03.tpc_h03,
         {"DATE": date(1995, 3, 15)},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(
+            RuntimeError, match=r".*Only single grouping sets are supported.*"
+        ),
     ),
     pytest.param(
-        ibis_tpc.h04._tpc_h04,
-        ("orders", "lineitem"),
+        ibis_tpc.h04.tpc_h04,
         {"DATE": date(1993, 7, 1)},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(RuntimeError, match=r".*Error: 16.*"),
     ),
     pytest.param(
-        ibis_tpc.h05._tpc_h05,
-        ("customer", "orders", "lineitem", "supplier", "nation", "region"),
+        ibis_tpc.h05.tpc_h05,
         {"DATE": date(1994, 1, 1)},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(RuntimeError, match=r".*Error: 2.*"),
     ),
     pytest.param(
-        ibis_tpc.h06._tpc_h06,
-        ("lineitem",),
+        ibis_tpc.h06.tpc_h06,
         {"DATE": date(1994, 1, 1)},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(RuntimeError, match=r".*Error: 16.*"),
     ),
     pytest.param(
-        ibis_tpc.h07._tpc_h07,
-        ("supplier", "lineitem", "orders", "customer", "nation"),
+        ibis_tpc.h07.tpc_h07,
         {"DATE": date(1995, 1, 1)},
-        marks=[pytest.mark.corr_sub_query],
+        pytest.raises(NotImplementedError, match=r".*SelfReference.*"),
     ),
     pytest.param(
-        ibis_tpc.h08._tpc_h08,
-        ("part", "supplier", "lineitem", "orders", "customer", "region", "nation"),
+        ibis_tpc.h08.tpc_h08,
         {"DATE": date(1995, 1, 1)},
-        marks=[pytest.mark.corr_sub_query],
+        pytest.raises(NotImplementedError, match=r".*SelfReference.*"),
     ),
     pytest.param(
-        ibis_tpc.h09._tpc_h09,
-        ("part", "supplier", "lineitem", "partsupp", "orders", "nation"),
+        ibis_tpc.h09.tpc_h09,
         {},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(
+            RuntimeError, match=r".*Only single grouping sets are supported.*"
+        ),
     ),
     pytest.param(
-        ibis_tpc.h10._tpc_h10,
-        ("customer", "orders", "lineitem", "nation"),
+        ibis_tpc.h10.tpc_h10,
         {"DATE": date(1993, 10, 1)},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(
+            RuntimeError, match=r".*Only single grouping sets are supported.*"
+        ),
     ),
     pytest.param(
-        ibis_tpc.h11._tpc_h11,
-        ("partsupp", "supplier", "nation"),
+        ibis_tpc.h11.tpc_h11,
         {},
-        marks=[pytest.mark.duckdb_catalog_error],
+        pytest.raises(RuntimeError, match=r".*Catalog Error.*"),
     ),
     pytest.param(
-        ibis_tpc.h12._tpc_h12,
-        ("orders", "lineitem"),
+        ibis_tpc.h12.tpc_h12,
         {"DATE": date(1994, 1, 1)},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(RuntimeError, match=r".*Error: 2.*"),
     ),
     pytest.param(
-        ibis_tpc.h13._tpc_h13,
-        ("customer", "orders"),
+        ibis_tpc.h13.tpc_h13,
         {},
-        marks=[pytest.mark.duckdb_catalog_error],
+        pytest.raises(RuntimeError, match=r".*Catalog Error.*"),
     ),
     pytest.param(
-        ibis_tpc.h14._tpc_h14,
-        ("lineitem", "part"),
+        ibis_tpc.h14.tpc_h14,
         {"DATE": date(1995, 9, 1)},
-        marks=[pytest.mark.corr_sub_query],
+        pytest.raises(TypeError, match=r".*must be instance of same class.*"),
     ),
     pytest.param(
-        ibis_tpc.h15._tpc_h15,
-        ("lineitem", "supplier"),
+        ibis_tpc.h15.tpc_h15,
         {"DATE": date(1996, 1, 1)},
-        marks=[pytest.mark.ibis_substrait_error],
+        pytest.raises(AssertionError, match=r".*non-empty child_rel_field_offsets.*"),
     ),
     pytest.param(
-        ibis_tpc.h16._tpc_h16,
-        ("partsupp", "part", "supplier"),
+        ibis_tpc.h16.tpc_h16,
         {},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(
+            RuntimeError, match=r".*Only single grouping sets are supported.*"
+        ),
     ),
     pytest.param(
-        ibis_tpc.h17._tpc_h17,
-        ("lineitem", "part"),
+        ibis_tpc.h17.tpc_h17,
         {},
-        marks=[pytest.mark.corr_sub_query],
+        pytest.raises(TypeError, match=r".*must be instance of same class.*"),
     ),
     pytest.param(
-        ibis_tpc.h18._tpc_h18,
-        ("customer", "orders", "lineitem"),
+        ibis_tpc.h18.tpc_h18,
         {},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(
+            RuntimeError, match=r".*Only single grouping sets are supported.*"
+        ),
     ),
     pytest.param(
-        ibis_tpc.h19._tpc_h19,
-        ("lineitem", "part"),
+        ibis_tpc.h19.tpc_h19,
         {},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(RuntimeError, match=r".*Error: 2.*"),
     ),
     pytest.param(
-        ibis_tpc.h20._tpc_h20,
-        ("supplier", "nation", "partsupp", "part", "lineitem"),
+        ibis_tpc.h20.tpc_h20,
         {"DATE": date(1994, 1, 1)},
-        marks=[pytest.mark.duckdb_catalog_error],
+        pytest.raises(RuntimeError, match=r".*Catalog Error.*"),
     ),
     pytest.param(
-        ibis_tpc.h21._tpc_h21,
-        ("supplier", "lineitem", "orders", "nation"),
+        ibis_tpc.h21.tpc_h21,
         {},
-        marks=[pytest.mark.duckdb_catalog_error],
+        pytest.raises(RuntimeError, match=r".*Catalog Error.*"),
     ),
     pytest.param(
-        ibis_tpc.h22._tpc_h22,
-        ("customer", "orders"),
+        ibis_tpc.h22.tpc_h22,
         {},
-        marks=[pytest.mark.duckdb_internal_error],
+        pytest.raises(RuntimeError, match=r".*Error: 2.*"),
     ),
 ]
 
 
-@pytest.mark.parametrize("func, tables, dates", test_params)
-def test_tpc(con, compiler, func, tables, dates, request):
-    tables = list(map(request.getfixturevalue, tables))
-    query = func(tables, **dates)
-    proto = compiler.compile(query)
-    con.from_substrait(proto.SerializeToString())
+@pytest.mark.parametrize("tpc_func, kwargs, expectation", serialize_deserialize)
+def test_send_to_duckdb(con, compiler, tpc_func, expectation, kwargs):
+    query = tpc_func(con, **kwargs)
+
+    # The con.con here points to the underlying DuckDB connection
+    with expectation:
+        proto = compiler.compile(query)
+        con.con.from_substrait(proto.SerializeToString())
+
+
+serialize = [
+    pytest.param(
+        ibis_tpc.h01.tpc_h01,
+        {"DATE": date(1998, 12, 1)},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h02.tpc_h02,
+        {},
+        pytest.raises(TypeError, match=r".*must be instance of same class.*"),
+    ),
+    pytest.param(
+        ibis_tpc.h03.tpc_h03,
+        {"DATE": date(1995, 3, 15)},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h04.tpc_h04,
+        {"DATE": date(1993, 7, 1)},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h05.tpc_h05,
+        {"DATE": date(1994, 1, 1)},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h06.tpc_h06,
+        {"DATE": date(1994, 1, 1)},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h07.tpc_h07,
+        {"DATE": date(1995, 1, 1)},
+        pytest.raises(NotImplementedError, match=r".*SelfReference.*"),
+    ),
+    pytest.param(
+        ibis_tpc.h08.tpc_h08,
+        {"DATE": date(1995, 1, 1)},
+        pytest.raises(NotImplementedError, match=r".*SelfReference.*"),
+    ),
+    pytest.param(
+        ibis_tpc.h09.tpc_h09,
+        {},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h10.tpc_h10,
+        {"DATE": date(1993, 10, 1)},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h11.tpc_h11,
+        {},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h12.tpc_h12,
+        {"DATE": date(1994, 1, 1)},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h13.tpc_h13,
+        {},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h14.tpc_h14,
+        {"DATE": date(1995, 9, 1)},
+        pytest.raises(TypeError, match=r".*must be instance of same class.*"),
+    ),
+    pytest.param(
+        ibis_tpc.h15.tpc_h15,
+        {"DATE": date(1996, 1, 1)},
+        pytest.raises(AssertionError, match=r".*non-empty child_rel_field_offsets.*"),
+    ),
+    pytest.param(
+        ibis_tpc.h16.tpc_h16,
+        {},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h17.tpc_h17,
+        {},
+        pytest.raises(TypeError, match=r".*must be instance of same class.*"),
+    ),
+    pytest.param(
+        ibis_tpc.h18.tpc_h18,
+        {},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h19.tpc_h19,
+        {},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h20.tpc_h20,
+        {"DATE": date(1994, 1, 1)},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h21.tpc_h21,
+        {},
+        nullcontext(),
+    ),
+    pytest.param(
+        ibis_tpc.h22.tpc_h22,
+        {},
+        nullcontext(),
+    ),
+]
+
+
+@pytest.mark.parametrize("tpc_func, kwargs, expectation", serialize)
+def test_compile(con, compiler, tpc_func, kwargs, expectation):
+    query = tpc_func(con, **kwargs)
+    with expectation:
+        compiler.compile(query)
