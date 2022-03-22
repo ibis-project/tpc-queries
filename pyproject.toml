@@ -1,0 +1,18 @@
+[tool.pytest.ini_options]
+xfail_strict = true
+addopts = [
+  "--ignore=site-packages",
+  "--ignore=dist-packages",
+  "--strict-markers",
+  "--strict-config",
+  "--benchmark-skip",
+  "--randomly-dont-reorganize"
+]
+empty_parameter_set_mark = "fail_at_collect"
+norecursedirs = ["site-packages", "dist-packages"]
+markers = [
+  "duckdb_internal_error: Query throws a duckdb internal error",
+  "corr_sub_query: Query fails because no support for correlated subqueries in substrait",
+  "duckdb_catalog_error: Query fails because of a duckdb catalog error",
+  "ibis_substrait_error: Query fails because of a substrait compilation failure"
+  ]
