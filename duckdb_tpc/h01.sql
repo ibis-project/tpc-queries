@@ -9,7 +9,7 @@ SELECT l_returnflag,
        avg(l_discount) AS avg_disc,
        count(*) AS count_order
 FROM lineitem
-WHERE l_shipdate <= '1998-09-01'  -- date '1998-12-01' - interval '[DELTA=90]' DAY
+WHERE l_shipdate <= '1998-09-02'  -- date '1998-12-01' - interval '[DELTA=90]' DAY
 GROUP BY l_returnflag,
          l_linestatus
 ORDER BY l_returnflag,

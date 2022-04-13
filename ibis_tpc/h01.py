@@ -19,7 +19,7 @@ def tpc_h01(con, DELTA=90, DATE="1998-12-01"):
     t = con.table("lineitem")
 
     interval = add_date(DATE, dd=-1 * DELTA)
-    q = t.filter(t.l_shipdate < interval)
+    q = t.filter(t.l_shipdate <= interval)
     discount_price = t.l_extendedprice * (1 - t.l_discount)
     charge = discount_price * (1 + t.l_tax)
     q = q.group_by(["l_returnflag", "l_linestatus"])
