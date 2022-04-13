@@ -2,7 +2,7 @@ import duckdb
 import ibis
 import pytest
 from ibis.backends.base import BaseBackend
-from ibis.backends.duckdb.parser import parse_type
+from ibis.backends.duckdb.datatypes import parse_type
 from ibis_substrait.compiler.core import SubstraitCompiler
 
 
