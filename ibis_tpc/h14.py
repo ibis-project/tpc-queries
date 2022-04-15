@@ -11,7 +11,6 @@ def tpc_h14(con, DATE="1995-09-01"):
     part = con.table("part")
     q = lineitem
     q = q.join(part, lineitem.l_partkey == part.p_partkey)
-    q = q.materialize()
     q = q.filter([q.l_shipdate >= DATE, q.l_shipdate < add_date(DATE, dm=1)])
 
     revenue = q.l_extendedprice * (1 - q.l_discount)

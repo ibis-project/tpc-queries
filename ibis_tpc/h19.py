@@ -17,7 +17,6 @@ def tpc_h19(
     lineitem = con.table("lineitem")
     part = con.table("part")
     q = lineitem.join(part, part.p_partkey == lineitem.l_partkey)
-    q = q.materialize()
 
     q1 = (
         (q.p_brand == BRAND1)

@@ -18,7 +18,6 @@ def tpc_h15(con, DATE="1996-01-01"):
     )
 
     q = supplier.join(qrev, supplier.s_suppkey == qrev.l_suppkey)
-    q = q.materialize()
     q = q.filter([q.total_revenue == qrev.total_revenue.max()])
     q = q.sort_by([q.s_suppkey])
     q = q[q.s_suppkey, q.s_name, q.s_address, q.s_phone, q.total_revenue]

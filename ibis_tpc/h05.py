@@ -23,7 +23,6 @@ def tpc_h05(con, NAME="ASIA", DATE="1994-01-01"):
         & (supplier.s_nationkey == nation.n_nationkey),
     )
     q = q.join(region, nation.n_regionkey == region.r_regionkey)
-    q = q.materialize()
 
     q = q.filter(
         [q.r_name == NAME, q.o_orderdate >= DATE, q.o_orderdate < add_date(DATE, dy=1)]

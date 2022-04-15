@@ -15,7 +15,6 @@ def tpc_h13(con, WORD1="special", WORD2="requests"):
         (customer.c_custkey == orders.o_custkey)
         & ~orders.o_comment.like(f"%{WORD1}%{WORD2}%"),
     )
-    innerq = innerq.materialize()
     innergq = innerq.group_by([innerq.c_custkey])
     innerq = innergq.aggregate(c_count=innerq.o_orderkey.count())
 

@@ -19,7 +19,6 @@ def tpc_h21(con, NATION="SAUDI ARABIA"):
     q = q.join(lineitem, supplier.s_suppkey == lineitem.l_suppkey)
     q = q.join(orders, orders.o_orderkey == lineitem.l_orderkey)
     q = q.join(nation, supplier.s_nationkey == nation.n_nationkey)
-    q = q.materialize()
     q = q[
         q.l_orderkey.name("l1_orderkey"),
         q.o_orderstatus,

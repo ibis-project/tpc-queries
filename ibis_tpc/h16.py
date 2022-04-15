@@ -18,7 +18,6 @@ def tpc_h16(
     supplier = con.table("supplier")
 
     q = partsupp.join(part, part.p_partkey == partsupp.ps_partkey)
-    q = q.materialize()
     q = q.filter(
         [
             q.p_brand != BRAND,

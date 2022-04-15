@@ -19,7 +19,6 @@ def tpc_h18(con, QUANTITY=300):
     q = customer
     q = q.join(orders, customer.c_custkey == orders.o_custkey)
     q = q.join(lineitem, orders.o_orderkey == lineitem.l_orderkey)
-    q = q.materialize()
     q = q.filter([q.o_orderkey.isin(subq.l_orderkey)])
 
     gq = q.groupby([q.c_name, q.c_custkey, q.o_orderkey, q.o_orderdate, q.o_totalprice])

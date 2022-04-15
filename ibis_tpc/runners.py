@@ -121,7 +121,7 @@ class DuckDBRunner(Runner):
     def run(self, qid, outdir=None, backend="duckdb"):
         cur = self.con.cursor()
 
-        sql = open(f"duckdb_tpc/{qid}.sql").read()
+        sql = open(f"sqlite_tpc/{qid}.sql").read()
         t1 = time.time()
         cur.execute(sql)
         rows = cur.fetch_df()
@@ -262,13 +262,13 @@ setup_dbplyr = RRunner
 
 def compare(rows1, rows2):
     diffs = []
-    for row, (r1, r2) in enumerate(itertools.zip_longest(rows1, rows2)):
+    for rownum, (r1, r2) in enumerate(itertools.zip_longest(rows1, rows2)):
         if r1 is None:
-            diffs.append(f"[{i}]  extra row: {r2}")
+            diffs.append(f"[{rownum}]  extra row: {r2}")
             continue
 
         if r2 is None:
-            diffs.append(f"[{i}]  extra row: {r1}")
+            diffs.append(f"[{rownum}]  extra row: {r1}")
             continue
 
         lcr1 = {k.lower(): v for k, v in r1.items()}
@@ -278,7 +278,7 @@ def compare(rows1, rows2):
         for k in keys:
             v1 = lcr1.get(k, None)
             v2 = lcr2.get(k, None)
-            if diff := _compare(v1, v2, row=row, key=k):
+            if diff := _compare(v1, v2, row=rownum, key=k):
                 diffs.append(diff)
 
     return diffs

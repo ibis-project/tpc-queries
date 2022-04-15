@@ -9,7 +9,6 @@ def tpc_h17(con, BRAND="Brand#23", CONTAINER="MED BOX"):
     part = con.table("part")
 
     q = lineitem.join(part, part.p_partkey == lineitem.l_partkey)
-    q = q.materialize()
 
     innerq = lineitem
     innerq = innerq.filter([innerq.l_partkey == q.p_partkey])
