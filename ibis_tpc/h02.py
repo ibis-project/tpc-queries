@@ -15,13 +15,13 @@ def tpc_h02(con, REGION="EUROPE", SIZE=25, TYPE="BRASS"):
         .join(supplier, supplier.s_suppkey == partsupp.ps_suppkey)
         .join(nation, supplier.s_nationkey == nation.n_nationkey)
         .join(region, nation.n_regionkey == region.r_regionkey)
-    ).materialize()
+    )
 
     subexpr = (
         partsupp.join(supplier, supplier.s_suppkey == partsupp.ps_suppkey)
         .join(nation, supplier.s_nationkey == nation.n_nationkey)
         .join(region, nation.n_regionkey == region.r_regionkey)
-    ).materialize()
+    )
 
     subexpr = subexpr[
         (subexpr.r_name == REGION) & (expr.p_partkey == subexpr.ps_partkey)

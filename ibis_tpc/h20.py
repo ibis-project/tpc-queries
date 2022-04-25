@@ -15,7 +15,6 @@ def tpc_h20(con, COLOR="forest", DATE="1994-01-01", NATION="CANADA"):
     lineitem = con.table("lineitem")
 
     q1 = supplier.join(nation, supplier.s_nationkey == nation.n_nationkey)
-    q1 = q1.materialize()
 
     q3 = part.filter([part.p_name.like(f"{COLOR}%")])
     q2 = partsupp

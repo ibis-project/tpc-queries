@@ -14,7 +14,6 @@ def tpc_h10(con, DATE="1993-10-01"):
     q = q.join(orders, customer.c_custkey == orders.o_custkey)
     q = q.join(lineitem, lineitem.l_orderkey == orders.o_orderkey)
     q = q.join(nation, customer.c_nationkey == nation.n_nationkey)
-    q = q.materialize()
 
     q = q.filter(
         [

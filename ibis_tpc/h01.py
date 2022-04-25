@@ -1,10 +1,10 @@
 "Pricing Summary Report Query (Q1)"
 
 
-from datetime import date, timedelta
+from .utils import add_date
 
 
-def tpc_h01(con, DELTA=90):
+def tpc_h01(con, DELTA=90, DATE="1998-12-01"):
     """
     The Pricing Summary Report Query provides a summary pricing report for all
     lineitems shipped as of a given date.  The  date is  within  60  - 120 days
@@ -18,12 +18,11 @@ def tpc_h01(con, DELTA=90):
 
     t = con.table("lineitem")
 
-    interval = date.fromisoformat("1998-12-01") - timedelta(days=DELTA)
-    q = t.filter(t.l_shipdate < interval)
+    interval = add_date(DATE, dd=-1 * DELTA)
+    q = t.filter(t.l_shipdate <= interval)
     discount_price = t.l_extendedprice * (1 - t.l_discount)
     charge = discount_price * (1 + t.l_tax)
     q = q.group_by(["l_returnflag", "l_linestatus"])
-    q = q.order_by(["l_returnflag", "l_linestatus"])
     q = q.aggregate(
         sum_qty=t.l_quantity.sum(),
         sum_base_price=t.l_extendedprice.sum(),
@@ -34,4 +33,5 @@ def tpc_h01(con, DELTA=90):
         avg_disc=t.l_discount.mean(),
         count_order=t.count(),
     )
+    q = q.sort_by(["l_returnflag", "l_linestatus"])
     return q

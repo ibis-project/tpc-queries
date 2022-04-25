@@ -21,7 +21,6 @@ def tpc_h09(con, COLOR="green"):
     q = q.join(part, part.p_partkey == lineitem.l_partkey)
     q = q.join(orders, orders.o_orderkey == lineitem.l_orderkey)
     q = q.join(nation, supplier.s_nationkey == nation.n_nationkey)
-    q = q.materialize()
 
     q = q[
         (q.l_extendedprice * (1 - q.l_discount) - q.ps_supplycost * q.l_quantity).name(

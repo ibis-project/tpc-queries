@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import glob
 import math
 import itertools
@@ -13,6 +12,7 @@ from typing import List, Dict, Any
 import click
 import pandas
 import ibis
+from multipledispatch import dispatch
 
 g_debug = False
 
@@ -109,6 +109,25 @@ class SqliteRunner(Runner):
             backend=f"{self.backend}",
             sqlite_version=sqlite3.sqlite_version,
         )
+
+
+class DuckDBRunner(Runner):
+    def setup(self, db="tpch.ddb"):
+        super().setup(db=db)
+        import duckdb
+
+        self.con = duckdb.connect(db)
+
+    def run(self, qid, outdir=None, backend="duckdb"):
+        cur = self.con.cursor()
+
+        sql = open(f"sqlite_tpc/{qid}.sql").read()
+        t1 = time.time()
+        cur.execute(sql)
+        rows = cur.fetch_df()
+        t2 = time.time()
+        rows = rows.to_dict("records")
+        return rows, t2 - t1
 
 
 class IbisRunner(Runner):
@@ -236,19 +255,20 @@ class RRunner(Runner):
 setup_sqlite = SqliteRunner
 setup_ibis = IbisRunner
 setup_sqlalchemy = SqlAlchemyRunner
+setup_duckdb = DuckDBRunner
 setup_dplyr = RRunner
 setup_dbplyr = RRunner
 
 
 def compare(rows1, rows2):
     diffs = []
-    for i, (r1, r2) in enumerate(itertools.zip_longest(rows1, rows2)):
+    for rownum, (r1, r2) in enumerate(itertools.zip_longest(rows1, rows2)):
         if r1 is None:
-            diffs.append(f"[{i}]  extra row: {r2}")
+            diffs.append(f"[{rownum}]  extra row: {r2}")
             continue
 
         if r2 is None:
-            diffs.append(f"[{i}]  extra row: {r1}")
+            diffs.append(f"[{rownum}]  extra row: {r1}")
             continue
 
         lcr1 = {k.lower(): v for k, v in r1.items()}
@@ -258,27 +278,71 @@ def compare(rows1, rows2):
         for k in keys:
             v1 = lcr1.get(k, None)
             v2 = lcr2.get(k, None)
-            if isinstance(v2, pandas.Timestamp):
-                if v1 != v2.strftime("%Y-%m-%d"):
-                    diffs.append(f"[{i}].{k} (date) {v1} != {v2}")
-            elif isinstance(v1, float) and isinstance(v2, float):
-                if v2 != v1:
-                    if v1:
-                        dv = abs(v2 - v1)
-                        pd = dv / v1
-                    else:
-                        pd = 1
-                    if pd > 1e-10:
-                        diffs.append(f"[{i}].{k} (float) {v1} != {v2} ({pd*100}%)")
-            elif isinstance(v1, float) and math.isnan(v1) and v2 is None:
-                pass
-            elif isinstance(v2, float) and math.isnan(v2) and v1 is None:
-                pass
-            else:
-                if v1 != v2:
-                    diffs.append(f"[{i}].{k} {v1} ({type(v1)}) != {v2} ({type(v2)})")
+            if diff := _compare(v1, v2, row=rownum, key=k):
+                diffs.append(diff)
 
     return diffs
+
+
+@dispatch(pandas.Timestamp, pandas.Timestamp)
+def _compare(v1, v2, row=None, key=None):
+    if v1 != v2:
+        return f"[{row}].{key} (date) {v1} != {v2}"
+
+
+@dispatch(str, pandas.Timestamp)
+def _compare(v1, v2, row=None, key=None):  # noqa: F811
+    v1 = pandas.to_datetime(v1)
+    return _compare(v1, v2, row=row, key=key)
+
+
+@dispatch(pandas.Timestamp, str)
+def _compare(v1, v2, row=None, key=None):  # noqa: F811
+    v2 = pandas.to_datetime(v2)
+    return _compare(v1, v2, row=row, key=key)
+
+
+@dispatch(float, float)
+def _compare(v1, v2, row=None, key=None):  # noqa: F811
+    if not math.isclose(v1, v2, rel_tol=1e-6):
+        percent_diff = 100
+        if v1:
+            percent_diff = abs(v2 - v1) / v1 * 100
+        return f"[{row}].{key} (float) {v1} != {v2} ({percent_diff}%)"
+
+
+@dispatch(float, object)
+def _compare(v1, v2, row=None, key=None):  # noqa: F811
+    if math.isnan(v1) and v2 is None:
+        pass
+    elif not math.isnan(v1):
+        return f"[{row}].{key} {v1} ({type(v1)}) != {v2} ({type(v2)})"
+
+
+@dispatch(object, float)
+def _compare(v1, v2, row=None, key=None):  # noqa: F811
+    if math.isnan(v1) and v2 is None:
+        pass
+    elif not math.isnan(v2):
+        return f"[{row}].{key} {v1} ({type(v1)}) != {v2} ({type(v2)})"
+
+
+@dispatch(int, float)
+def _compare(v1, v2, row=None, key=None):  # noqa: F811
+    v1 = float(v1)
+    return _compare(v1, v2, row=row, key=key)
+
+
+@dispatch(float, int)
+def _compare(v1, v2, row=None, key=None):  # noqa: F811
+    v2 = float(v2)
+    return _compare(v1, v2, row=row, key=key)
+
+
+@dispatch(object, object)
+def _compare(v1, v2, row=None, key=None):  # noqa: F811
+    if v1 != v2:
+        return f"[{row}].{key} {v1} ({type(v1)}) != {v2} ({type(v2)})"
 
 
 @click.command()

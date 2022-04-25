@@ -18,7 +18,6 @@ def tpc_h16(
     supplier = con.table("supplier")
 
     q = partsupp.join(part, part.p_partkey == partsupp.ps_partkey)
-    q = q.materialize()
     q = q.filter(
         [
             q.p_brand != BRAND,
@@ -26,7 +25,7 @@ def tpc_h16(
             q.p_size.isin(SIZES),
             ~q.ps_suppkey.isin(
                 supplier.filter(
-                    [supplier.s_comment.like("%customer%complaints%")]
+                    [supplier.s_comment.like("%Customer%Complaints%")]
                 ).s_suppkey
             ),
         ]
