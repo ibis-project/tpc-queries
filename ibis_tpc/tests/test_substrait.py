@@ -62,7 +62,7 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h12.tpc_h12,
         {"DATE": date(1994, 1, 1)},
-        # marks=pytest.mark.xfail(reason="how to translate ops.SimpleCase?"),
+        marks=pytest.mark.xfail(reason="scalar function 'values'"),
     ),
     pytest.param(
         ibis_tpc.h13.tpc_h13,
