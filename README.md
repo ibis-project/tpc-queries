@@ -26,3 +26,27 @@ where:
 
 ## Links
 - [TPC-H v3.0 specification](http://tpc.org/tpc_documents_current_versions/pdf/tpc-h_v3.0.0.pdf)
+
+## Included scripts
+
+### `write_tpc_proto.py`
+
+Uses `ibis_substrait` to compile Ibis expressions to binary blobs and stores
+them in the `substrait_tpc` directory.
+
+Usage:
+
+Generate updated blobs for all queries (for those queries that can be compiled)
+``` sh
+python write_tpc_proto.py
+```
+
+Generate updated blob for query h#
+
+``` sh
+python write_tpc_proto.py --query h01
+```
+
+`
+
+`
