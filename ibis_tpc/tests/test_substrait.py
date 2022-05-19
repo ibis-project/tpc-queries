@@ -50,7 +50,9 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h09.tpc_h09,
         {},
-        marks=pytest.mark.xfail(reason="scalar function 'cast'"),
+        marks=pytest.mark.xfail(
+            reason="duckdb INTERNAL Error: Substrait type not yet supported"
+        ),
     ),
     pytest.param(
         ibis_tpc.h10.tpc_h10,
@@ -63,17 +65,17 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h12.tpc_h12,
         {"DATE": date(1994, 1, 1)},
-        marks=pytest.mark.xfail(reason="scalar function 'values'"),
+        marks=pytest.mark.xfail(reason="duckdb INTERNAL Error"),
     ),
     pytest.param(
         ibis_tpc.h13.tpc_h13,
         {},
-        marks=pytest.mark.xfail(reason="how to translate not?"),
+        marks=pytest.mark.xfail(reason="duckdb no scalar function 'not'"),
     ),
     pytest.param(
         ibis_tpc.h14.tpc_h14,
         {"DATE": date(1995, 9, 1)},
-        marks=pytest.mark.xfail(reason="how to translate ops.SearchedCase?"),
+        # marks=pytest.mark.xfail(reason="how to translate ops.SearchedCase?"),
     ),
     pytest.param(
         ibis_tpc.h15.tpc_h15,
