@@ -18,4 +18,6 @@ def compiler():
 def duckcon():
     con = ibis.duckdb.connect()
     con.con.execute("CALL dbgen(sf=0.1)")
+    con.con.execute("install substrait")
+    con.con.execute("load substrait")
     yield con
