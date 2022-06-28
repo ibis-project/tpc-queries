@@ -27,7 +27,9 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h04.tpc_h04,
         {"DATE": date(1993, 7, 1)},
-        marks=pytest.mark.xfail(reason="scalar function 'any'"),
+        marks=pytest.mark.xfail(
+            reason="duckdb INTERNAL Error: Unsupported expression type 12"
+        ),
     ),
     pytest.param(
         ibis_tpc.h05.tpc_h05,
@@ -65,7 +67,6 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h12.tpc_h12,
         {"DATE": date(1994, 1, 1)},
-        marks=pytest.mark.xfail(reason="duckdb INTERNAL Error"),
     ),
     pytest.param(
         ibis_tpc.h13.tpc_h13,
@@ -75,7 +76,7 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h14.tpc_h14,
         {"DATE": date(1995, 9, 1)},
-        # marks=pytest.mark.xfail(reason="how to translate ops.SearchedCase?"),
+        marks=pytest.mark.xfail(reason="expected Expression got AggregateFunction"),
     ),
     pytest.param(
         ibis_tpc.h15.tpc_h15,
@@ -100,9 +101,6 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h19.tpc_h19,
         {},
-        # note that this works elsewhere, probably because whatever "ValueList"
-        # is being used for gets optimized out?
-        marks=pytest.mark.xfail(reason="scalar function 'values'"),
     ),
     pytest.param(
         ibis_tpc.h20.tpc_h20,
@@ -112,12 +110,12 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h21.tpc_h21,
         {},
-        marks=pytest.mark.xfail(reason="scalar function 'any'"),
+        marks=pytest.mark.xfail(reason="KeyError: ExistsSubquery"),
     ),
     pytest.param(
         ibis_tpc.h22.tpc_h22,
         {},
-        marks=pytest.mark.xfail(reason="scalar function 'values'"),
+        marks=pytest.mark.xfail(reason="KeyError: NotExistsSubquery"),
     ),
 ]
 
@@ -128,6 +126,8 @@ def test_send_to_duckdb(con, compiler, tpc_func, kwargs):
 
     # The con.con here points to the underlying DuckDB connection
     proto = compiler.compile(query)
+    con.con.execute("install substrait")
+    con.con.execute("load substrait")
     con.con.from_substrait(proto.SerializeToString())
 
 
@@ -252,7 +252,9 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h04.tpc_h04,
         {"DATE": date(1993, 7, 1)},
-        marks=pytest.mark.xfail(reason="column index out of bounds"),
+        marks=pytest.mark.xfail(
+            reason="incorrectly reassembling subquery set predicate"
+        ),
     ),
     pytest.param(
         ibis_tpc.h05.tpc_h05,
