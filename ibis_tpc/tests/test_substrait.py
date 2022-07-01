@@ -18,7 +18,9 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h02.tpc_h02,
         {},
-        marks=pytest.mark.xfail(reason="correlated_subquery"),
+        marks=pytest.mark.xfail(
+            raises=KeyError, reason="correlated_subquery 'TableArrayView'"
+        ),
     ),
     pytest.param(
         ibis_tpc.h03.tpc_h03,
@@ -27,9 +29,7 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h04.tpc_h04,
         {"DATE": date(1993, 7, 1)},
-        marks=pytest.mark.xfail(
-            reason="duckdb INTERNAL Error: Unsupported expression type 12"
-        ),
+        marks=pytest.mark.xfail(raises=KeyError, reason="ops.ExistsSubquery"),
     ),
     pytest.param(
         ibis_tpc.h05.tpc_h05,
@@ -42,12 +42,16 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h07.tpc_h07,
         {"DATE": date(1995, 1, 1)},
-        marks=pytest.mark.xfail(reason="correlated_subquery"),
+        marks=pytest.mark.xfail(
+            raises=NotImplementedError, reason="Self reference (view)"
+        ),
     ),
     pytest.param(
         ibis_tpc.h08.tpc_h08,
         {"DATE": date(1995, 1, 1)},
-        marks=pytest.mark.xfail(reason="correlated_subquery"),
+        marks=pytest.mark.xfail(
+            raises=NotImplementedError, reason="Self reference (view)"
+        ),
     ),
     pytest.param(
         ibis_tpc.h09.tpc_h09,
@@ -71,32 +75,39 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h13.tpc_h13,
         {},
-        marks=pytest.mark.xfail(reason="duckdb no scalar function 'not'"),
+        marks=pytest.mark.xfail(
+            raises=RuntimeError, reason="duckdb no scalar function 'not'"
+        ),
     ),
     pytest.param(
         ibis_tpc.h14.tpc_h14,
         {"DATE": date(1995, 9, 1)},
-        marks=pytest.mark.xfail(reason="expected Expression got AggregateFunction"),
+        marks=pytest.mark.xfail(
+            raises=TypeError,
+            reason="protobuf error resulting subquery (cannot merge Expression and AggregateFunction)",  # noqa
+        ),
     ),
     pytest.param(
         ibis_tpc.h15.tpc_h15,
         {"DATE": date(1996, 1, 1)},
-        marks=pytest.mark.xfail(reason="correlated_subquery"),
+        marks=pytest.mark.xfail(
+            raises=AssertionError, reason="non-empty child offsets"
+        ),
     ),
     pytest.param(
         ibis_tpc.h16.tpc_h16,
         {},
-        marks=pytest.mark.xfail(reason="how to translate not?"),
+        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h17.tpc_h17,
         {},
-        marks=pytest.mark.xfail(reason="correlated_subquery"),
+        marks=pytest.mark.xfail(raises=NotImplementedError),
     ),
     pytest.param(
         ibis_tpc.h18.tpc_h18,
         {},
-        marks=pytest.mark.xfail(reason="duckdb INTERNAL ERROR (no cast)"),
+        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h19.tpc_h19,
@@ -105,17 +116,17 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h20.tpc_h20,
         {"DATE": date(1994, 1, 1)},
-        marks=pytest.mark.xfail(reason="duckdb INTERNAL ERROR (no cast)"),
+        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h21.tpc_h21,
         {},
-        marks=pytest.mark.xfail(reason="KeyError: ExistsSubquery"),
+        marks=pytest.mark.xfail(raises=KeyError, reason="ExistsSubquery"),
     ),
     pytest.param(
         ibis_tpc.h22.tpc_h22,
         {},
-        marks=pytest.mark.xfail(reason="KeyError: NotExistsSubquery"),
+        marks=pytest.mark.xfail(raises=KeyError, reason="NotExistsSubquery"),
     ),
 ]
 
@@ -148,6 +159,7 @@ serialize = [
     pytest.param(
         ibis_tpc.h04.tpc_h04,
         {"DATE": date(1993, 7, 1)},
+        marks=pytest.mark.xfail(raises=KeyError),
     ),
     pytest.param(
         ibis_tpc.h05.tpc_h05,
@@ -200,6 +212,7 @@ serialize = [
     pytest.param(
         ibis_tpc.h16.tpc_h16,
         {},
+        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h17.tpc_h17,
@@ -209,6 +222,7 @@ serialize = [
     pytest.param(
         ibis_tpc.h18.tpc_h18,
         {},
+        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h19.tpc_h19,
@@ -217,14 +231,17 @@ serialize = [
     pytest.param(
         ibis_tpc.h20.tpc_h20,
         {"DATE": date(1994, 1, 1)},
+        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h21.tpc_h21,
         {},
+        marks=pytest.mark.xfail(raises=KeyError),
     ),
     pytest.param(
         ibis_tpc.h22.tpc_h22,
         {},
+        marks=pytest.mark.xfail(raises=KeyError),
     ),
 ]
 
@@ -243,7 +260,6 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h02.tpc_h02,
         {},
-        marks=pytest.mark.xfail,
     ),
     pytest.param(
         ibis_tpc.h03.tpc_h03,
@@ -252,9 +268,6 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h04.tpc_h04,
         {"DATE": date(1993, 7, 1)},
-        marks=pytest.mark.xfail(
-            reason="incorrectly reassembling subquery set predicate"
-        ),
     ),
     pytest.param(
         ibis_tpc.h05.tpc_h05,
@@ -267,17 +280,17 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h07.tpc_h07,
         {"DATE": date(1995, 1, 1)},
-        marks=pytest.mark.xfail,
     ),
     pytest.param(
         ibis_tpc.h08.tpc_h08,
         {"DATE": date(1995, 1, 1)},
-        marks=pytest.mark.xfail,
     ),
     pytest.param(
         ibis_tpc.h09.tpc_h09,
         {},
-        marks=pytest.mark.xfail(reason="pop from an empty deque on decompile"),
+        marks=pytest.mark.xfail(
+            raises=IndexError, reason="pop from an empty deque on decompile"
+        ),
     ),
     pytest.param(
         ibis_tpc.h10.tpc_h10,
@@ -286,7 +299,7 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h11.tpc_h11,
         {},
-        marks=pytest.mark.xfail(reason="results don't match"),
+        marks=pytest.mark.xfail(raises=AssertionError, reason="results don't match"),
     ),
     pytest.param(
         ibis_tpc.h12.tpc_h12,
@@ -295,17 +308,17 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h13.tpc_h13,
         {},
-        marks=pytest.mark.xfail(reason="wrong type for result of `count()`"),
+        marks=pytest.mark.xfail(
+            raises=TypeError, reason="wrong type for result of `count()`"
+        ),
     ),
     pytest.param(
         ibis_tpc.h14.tpc_h14,
         {"DATE": date(1995, 9, 1)},
-        marks=pytest.mark.xfail,
     ),
     pytest.param(
         ibis_tpc.h15.tpc_h15,
         {"DATE": date(1996, 1, 1)},
-        marks=pytest.mark.xfail,
     ),
     pytest.param(
         ibis_tpc.h16.tpc_h16,
@@ -314,7 +327,6 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h17.tpc_h17,
         {},
-        marks=pytest.mark.xfail,
     ),
     pytest.param(
         ibis_tpc.h18.tpc_h18,
@@ -331,14 +343,10 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h21.tpc_h21,
         {},
-        marks=pytest.mark.xfail(reason="pop from an empty deque on decompile"),
     ),
     pytest.param(
         ibis_tpc.h22.tpc_h22,
         {},
-        marks=pytest.mark.xfail(
-            reason="bad type comparison which results from a bad field lookup"
-        ),
     ),
 ]
 
