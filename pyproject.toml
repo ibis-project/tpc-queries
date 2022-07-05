@@ -1,0 +1,10 @@
+[tool.pytest.ini_options]
+xfail_strict = true
+addopts = [
+  "--ignore=site-packages",
+  "--ignore=dist-packages",
+  "--strict-markers",
+  "--strict-config",
+]
+empty_parameter_set_mark = "fail_at_collect"
+norecursedirs = ["site-packages", "dist-packages"]

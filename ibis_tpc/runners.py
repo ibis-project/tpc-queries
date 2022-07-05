@@ -1,20 +1,26 @@
 #!/usr/bin/env python3
 
 import glob
-import math
 import itertools
 import json
+import math
 import os
 import time
+import warnings
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import click
-import pandas
 import ibis
+import pandas
 from multipledispatch import dispatch
 
+from .substrait import TPCHBackend
+
 g_debug = False
+
+# Currently very noisy warnings coming from SQLAlchemy via Ibis
+warnings.filterwarnings("ignore", module="ibis")
 
 
 def fmt(v):
@@ -114,6 +120,7 @@ class SqliteRunner(Runner):
 class DuckDBRunner(Runner):
     def setup(self, db="tpch.ddb"):
         super().setup(db=db)
+        from ibis_substrait.compiler.core import SubstraitCompiler
         import duckdb
 
         self.con = duckdb.connect(db)
@@ -160,11 +167,44 @@ class IbisRunner(Runner):
         return rows.to_dict("records"), t2 - t1
 
 
+class SubstraitRunner(Runner):
+    def setup(self, db="tpch.ddb"):
+        self.con = TPCHBackend(fname=db)
+
+    def run(self, qid, outdir=None, backend="substrait"):
+        import importlib
+
+        from ibis_substrait.compiler.core import SubstraitCompiler
+
+        compiler = SubstraitCompiler()
+
+        mod = importlib.import_module(f".{qid}", package="ibis_tpc")
+        query = getattr(mod, f"tpc_{qid}")(self.con)
+
+        t1 = time.time()
+        try:
+            proto = compiler.compile(query)
+        except Exception:
+            raise ValueError("can't compile")
+
+        # The self.con.con here points to the underlying DuckDB connection
+        self.con.con.execute("install substrait")
+        self.con.con.execute("load substrait")
+        results = self.con.con.from_substrait(proto.SerializeToString())
+        rows = results.to_df()
+        t2 = time.time()
+
+        return rows.to_dict("records"), t2 - t1
+
+    def teardown(self):
+        self.errors = []
+
+
 class SqlAlchemyRunner(Runner):
     def setup(self, db="tpch.db"):
         super().setup(db=db)
 
-        from sqlalchemy import create_engine, MetaData
+        from sqlalchemy import MetaData, create_engine
 
         self.engine = create_engine(f"sqlite:///{db}")
         self.metadata = MetaData(self.engine)
@@ -197,8 +237,8 @@ class RRunner(Runner):
 
         import rpy2
         import rpy2.robjects
-        import rpy2.robjects.pandas2ri
         import rpy2.robjects.packages as rpackages
+        import rpy2.robjects.pandas2ri
 
         rpy2.robjects.pandas2ri.activate()
 
@@ -256,6 +296,7 @@ setup_sqlite = SqliteRunner
 setup_ibis = IbisRunner
 setup_sqlalchemy = SqlAlchemyRunner
 setup_duckdb = DuckDBRunner
+setup_substrait = SubstraitRunner
 setup_dplyr = RRunner
 setup_dbplyr = RRunner
 
@@ -415,6 +456,10 @@ def main(qids, db, outdir, interfaces, backend, verbose, debug):
             try:
                 rows, elapsed_s = runner.run(qid, backend=backend, outdir=outdir)
                 out_jsonl(rows, outdir, f"{qid}-{interface}-{backend}-results.jsonl")
+
+                # No output is a failure
+                if not len(rows):
+                    raise ValueError("Empty output (zero rows)")
 
                 info["nrows"] = len(rows)
                 info["elapsed_s"] = elapsed_s

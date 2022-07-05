@@ -2,5 +2,8 @@ rpy2
 click
 pandas
 ibis-framework[sqlite,duckdb]
+ibis-substrait
 sqlparse
 python-dateutil
+duckdb
+duckdb-engine
