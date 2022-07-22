@@ -5,5 +5,5 @@ ibis-framework[sqlite,duckdb]
 ibis-substrait
 sqlparse
 python-dateutil
-duckdb
+duckdb>=0.4.0
 duckdb-engine
