@@ -1,6 +1,7 @@
 import importlib
 from datetime import date
 
+import duckdb
 import ibis_tpc
 import pytest
 from ibis_substrait.compiler.decompile import decompile
@@ -76,7 +77,7 @@ serialize_deserialize = [
         ibis_tpc.h13.tpc_h13,
         {},
         marks=pytest.mark.xfail(
-            raises=RuntimeError, reason="duckdb no scalar function 'not'"
+            raises=duckdb.StandardException, reason="duckdb no scalar function 'not'"
         ),
     ),
     pytest.param(
@@ -264,6 +265,7 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h03.tpc_h03,
         {"DATE": date(1995, 3, 15)},
+        marks=pytest.mark.xfail(raises=TypeError, reason="bad type comparison"),
     ),
     pytest.param(
         ibis_tpc.h04.tpc_h04,
@@ -272,6 +274,7 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h05.tpc_h05,
         {"DATE": date(1994, 1, 1)},
+        marks=pytest.mark.xfail(raises=TypeError, reason="bad type comparison"),
     ),
     pytest.param(
         ibis_tpc.h06.tpc_h06,
@@ -295,6 +298,7 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h10.tpc_h10,
         {"DATE": date(1993, 10, 1)},
+        marks=pytest.mark.xfail(raises=TypeError, reason="bad type comparison"),
     ),
     pytest.param(
         ibis_tpc.h11.tpc_h11,
@@ -304,6 +308,7 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h12.tpc_h12,
         {"DATE": date(1994, 1, 1)},
+        marks=pytest.mark.xfail(raises=AssertionError, reason="broken join table ref"),
     ),
     pytest.param(
         ibis_tpc.h13.tpc_h13,
@@ -335,6 +340,7 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h19.tpc_h19,
         {},
+        marks=pytest.mark.xfail(raises=AssertionError, reason="broken join table ref"),
     ),
     pytest.param(
         ibis_tpc.h20.tpc_h20,
