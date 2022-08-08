@@ -14,7 +14,7 @@ def compiler():
     yield SubstraitCompiler()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def duckcon():
     con = ibis.duckdb.connect()
     con.con.execute("CALL dbgen(sf=0.1)")
