@@ -138,8 +138,6 @@ def test_send_to_duckdb(con, compiler, tpc_func, kwargs):
 
     # The con.con here points to the underlying DuckDB connection
     proto = compiler.compile(query)
-    con.con.execute("install substrait")
-    con.con.execute("load substrait")
     con.con.from_substrait(proto.SerializeToString())
 
 
@@ -308,7 +306,6 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h12.tpc_h12,
         {"DATE": date(1994, 1, 1)},
-        marks=pytest.mark.xfail(raises=AssertionError, reason="broken join table ref"),
     ),
     pytest.param(
         ibis_tpc.h13.tpc_h13,
@@ -340,7 +337,6 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h19.tpc_h19,
         {},
-        marks=pytest.mark.xfail(raises=AssertionError, reason="broken join table ref"),
     ),
     pytest.param(
         ibis_tpc.h20.tpc_h20,
