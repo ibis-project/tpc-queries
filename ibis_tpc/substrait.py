@@ -10,6 +10,8 @@ from ibis_substrait.compiler.core import SubstraitCompiler
 class TPCHBackend(BaseBackend):  # noqa: D101
     def __init__(self, fname="", scale_factor=0.1):  # noqa: D107
         self.con = duckdb.connect(fname)
+        self.con.install_extension("substrait")
+        self.con.load_extension("substrait")
 
         if not fname:
             self.con.execute(f"CALL dbgen(sf={scale_factor})")
