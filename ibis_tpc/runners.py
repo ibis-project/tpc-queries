@@ -9,6 +9,7 @@ import time
 import warnings
 from pathlib import Path
 from typing import Any, Dict, List
+from decimal import Decimal
 
 import click
 import ibis
@@ -49,6 +50,8 @@ def out_jsonl(rows: List[Dict[str, Any]], outdir, fn):
         def default(self, obj):
             if isinstance(obj, pandas.Timestamp):
                 return str(obj)
+            if isinstance(obj, Decimal):
+                return float(obj)
             return json.JSONEncoder.default(self, obj)
 
     if outdir:
@@ -351,6 +354,18 @@ def _compare(v1, v2, row=None, key=None):  # noqa: F811
         if v1:
             percent_diff = abs(v2 - v1) / v1 * 100
         return f"[{row}].{key} (float) {v1} != {v2} ({percent_diff}%)"
+
+
+@dispatch(float, Decimal)
+def _compare(v1, v2, row=None, key=None):
+    v2 = float(v2)
+    return _compare(v1, v2, row=row, key=key)
+
+
+@dispatch(Decimal, float)
+def _compare(v1, v2, row=None, key=None):
+    v1 = float(v1)
+    return _compare(v1, v2, row=row, key=key)
 
 
 @dispatch(float, object)
