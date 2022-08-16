@@ -121,8 +121,8 @@ class SqliteRunner(Runner):
 class DuckDBRunner(Runner):
     def setup(self, db="tpch.ddb"):
         super().setup(db=db)
-        from ibis_substrait.compiler.core import SubstraitCompiler
         import duckdb
+        from ibis_substrait.compiler.core import SubstraitCompiler
 
         self.con = duckdb.connect(db)
 
