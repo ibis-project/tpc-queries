@@ -131,7 +131,7 @@ class DuckDBRunner(Runner):
         sql = open(f"sqlite_tpc/{qid}.sql").read()
         t1 = time.time()
         cur.execute(sql)
-        rows = cur.fetch_df()
+        rows = cur.fetch_arrow_table().to_pandas()
         t2 = time.time()
         rows = rows.to_dict("records")
         return rows, t2 - t1
