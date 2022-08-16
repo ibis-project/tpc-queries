@@ -32,7 +32,8 @@ def fmt(v):
 
 def out_txt(s, outdir, fn):
     if outdir:
-        print(s, file=open(Path(outdir) / fn, mode="w"), flush=True)
+        with open(Path(outdir) / fn, mode="w") as f:
+            print(s, file=f, flush=True)
 
 
 def out_sql(sql, outdir, fn):
@@ -99,7 +100,7 @@ class SqliteRunner(Runner):
     def run(self, qid, outdir=None, backend="sqlite"):
         cur = self.con.cursor()
 
-        sql = open(f"sqlite_tpc/{qid}.sql").read()
+        sql = Path(f"sqlite_tpc/{qid}.sql").read_text()
         t1 = time.time()
         cur.execute(sql)
         rows = cur.fetchall()
@@ -120,18 +121,18 @@ class SqliteRunner(Runner):
 class DuckDBRunner(Runner):
     def setup(self, db="tpch.ddb"):
         super().setup(db=db)
-        from ibis_substrait.compiler.core import SubstraitCompiler
         import duckdb
+        from ibis_substrait.compiler.core import SubstraitCompiler
 
         self.con = duckdb.connect(db)
 
     def run(self, qid, outdir=None, backend="duckdb"):
         cur = self.con.cursor()
 
-        sql = open(f"sqlite_tpc/{qid}.sql").read()
+        sql = Path(f"sqlite_tpc/{qid}.sql").read_text()
         t1 = time.time()
         cur.execute(sql)
-        rows = cur.fetch_df()
+        rows = cur.fetch_arrow_table().to_pandas()
         t2 = time.time()
         rows = rows.to_dict("records")
         return rows, t2 - t1
