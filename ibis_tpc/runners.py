@@ -32,7 +32,8 @@ def fmt(v):
 
 def out_txt(s, outdir, fn):
     if outdir:
-        print(s, file=open(Path(outdir) / fn, mode="w"), flush=True)
+        with open(Path(outdir) / fn, mode="w") as f:
+            print(s, file=f, flush=True)
 
 
 def out_sql(sql, outdir, fn):
@@ -99,7 +100,7 @@ class SqliteRunner(Runner):
     def run(self, qid, outdir=None, backend="sqlite"):
         cur = self.con.cursor()
 
-        sql = open(f"sqlite_tpc/{qid}.sql").read()
+        sql = Path(f"sqlite_tpc/{qid}.sql").read_text()
         t1 = time.time()
         cur.execute(sql)
         rows = cur.fetchall()
@@ -128,7 +129,7 @@ class DuckDBRunner(Runner):
     def run(self, qid, outdir=None, backend="duckdb"):
         cur = self.con.cursor()
 
-        sql = open(f"sqlite_tpc/{qid}.sql").read()
+        sql = Path(f"sqlite_tpc/{qid}.sql").read_text()
         t1 = time.time()
         cur.execute(sql)
         rows = cur.fetch_arrow_table().to_pandas()
