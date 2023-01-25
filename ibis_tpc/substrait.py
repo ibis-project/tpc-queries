@@ -3,8 +3,12 @@
 import duckdb
 import ibis
 from ibis.backends.base import BaseBackend
-from ibis.backends.duckdb.datatypes import parse_type
 from ibis_substrait.compiler.core import SubstraitCompiler
+
+try:
+    from ibis.backends.duckdb.datatypes import parse_type
+except ImportError:
+    from ibis.backends.duckdb.datatypes import parse as parse_type
 
 
 class TPCHBackend(BaseBackend):  # noqa: D101
