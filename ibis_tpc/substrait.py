@@ -21,6 +21,9 @@ class TPCHBackend(BaseBackend):  # noqa: D101
         del con
 
         self.con = duckdb.connect(fname)
+        self.con.install_extension("substrait")
+        self.con.load_extension("substrait")
+        self.con.execute(f"CALL dbgen(sf={scale_factor})")
 
     def table(self, table):  # noqa: D102
         return self.tables.get(table)
