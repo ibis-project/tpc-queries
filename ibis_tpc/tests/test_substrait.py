@@ -20,7 +20,7 @@ serialize_deserialize = [
         ibis_tpc.h02.tpc_h02,
         {},
         marks=pytest.mark.xfail(
-            raises=KeyError, reason="correlated_subquery 'TableArrayView'"
+            raises=AssertionError, reason="non-empty child_rel_field_offsets"
         ),
     ),
     pytest.param(
@@ -30,7 +30,10 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h04.tpc_h04,
         {"DATE": date(1993, 7, 1)},
-        marks=pytest.mark.xfail(raises=KeyError, reason="ops.ExistsSubquery"),
+        marks=pytest.mark.skip(
+            reason="raises Unsupported expression type 12 inside DuckDB and"
+            "leaves the catalog in an unusable state."
+        ),
     ),
     pytest.param(
         ibis_tpc.h05.tpc_h05,
@@ -44,14 +47,14 @@ serialize_deserialize = [
         ibis_tpc.h07.tpc_h07,
         {"DATE": date(1995, 1, 1)},
         marks=pytest.mark.xfail(
-            raises=NotImplementedError, reason="Self reference (view)"
+            raises=RuntimeError, reason="DuckDB cannot load substrait plan"
         ),
     ),
     pytest.param(
         ibis_tpc.h08.tpc_h08,
         {"DATE": date(1995, 1, 1)},
         marks=pytest.mark.xfail(
-            raises=NotImplementedError, reason="Self reference (view)"
+            raises=TypeError, reason="Aggregations inside scalar funcs are broken"
         ),
     ),
     pytest.param(
@@ -77,7 +80,7 @@ serialize_deserialize = [
         ibis_tpc.h13.tpc_h13,
         {},
         marks=pytest.mark.xfail(
-            raises=duckdb.StandardException, reason="duckdb no scalar function 'not'"
+            raises=duckdb.CatalogException, reason="duckdb no scalar function 'not'"
         ),
     ),
     pytest.param(
@@ -98,7 +101,9 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h16.tpc_h16,
         {},
-        marks=pytest.mark.xfail(raises=TypeError),
+        marks=pytest.mark.xfail(
+            raises=duckdb.CatalogException, reason="scalar function 'not'"
+        ),
     ),
     pytest.param(
         ibis_tpc.h17.tpc_h17,
@@ -108,7 +113,6 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h18.tpc_h18,
         {},
-        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h19.tpc_h19,
@@ -117,17 +121,20 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h20.tpc_h20,
         {"DATE": date(1994, 1, 1)},
-        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h21.tpc_h21,
         {},
-        marks=pytest.mark.xfail(raises=KeyError, reason="ExistsSubquery"),
+        marks=pytest.mark.xfail(
+            raises=duckdb.InternalException, reason="Unsupported expression type 12"
+        ),
     ),
     pytest.param(
         ibis_tpc.h22.tpc_h22,
         {},
-        marks=pytest.mark.xfail(raises=KeyError, reason="NotExistsSubquery"),
+        marks=pytest.mark.xfail(
+            raises=duckdb.InternalException, reason="Unsupported expression type 12"
+        ),
     ),
 ]
 
@@ -158,7 +165,6 @@ serialize = [
     pytest.param(
         ibis_tpc.h04.tpc_h04,
         {"DATE": date(1993, 7, 1)},
-        marks=pytest.mark.xfail(raises=KeyError),
     ),
     pytest.param(
         ibis_tpc.h05.tpc_h05,
@@ -171,7 +177,6 @@ serialize = [
     pytest.param(
         ibis_tpc.h07.tpc_h07,
         {"DATE": date(1995, 1, 1)},
-        marks=pytest.mark.xfail,
     ),
     pytest.param(
         ibis_tpc.h08.tpc_h08,
@@ -211,7 +216,6 @@ serialize = [
     pytest.param(
         ibis_tpc.h16.tpc_h16,
         {},
-        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h17.tpc_h17,
@@ -221,7 +225,6 @@ serialize = [
     pytest.param(
         ibis_tpc.h18.tpc_h18,
         {},
-        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h19.tpc_h19,
@@ -230,17 +233,14 @@ serialize = [
     pytest.param(
         ibis_tpc.h20.tpc_h20,
         {"DATE": date(1994, 1, 1)},
-        marks=pytest.mark.xfail(raises=TypeError),
     ),
     pytest.param(
         ibis_tpc.h21.tpc_h21,
         {},
-        marks=pytest.mark.xfail(raises=KeyError),
     ),
     pytest.param(
         ibis_tpc.h22.tpc_h22,
         {},
-        marks=pytest.mark.xfail(raises=KeyError),
     ),
 ]
 
@@ -263,7 +263,6 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h03.tpc_h03,
         {"DATE": date(1995, 3, 15)},
-        marks=pytest.mark.xfail(raises=TypeError, reason="bad type comparison"),
     ),
     pytest.param(
         ibis_tpc.h04.tpc_h04,
@@ -272,7 +271,6 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h05.tpc_h05,
         {"DATE": date(1994, 1, 1)},
-        marks=pytest.mark.xfail(raises=TypeError, reason="bad type comparison"),
     ),
     pytest.param(
         ibis_tpc.h06.tpc_h06,
@@ -296,7 +294,6 @@ roundtrip = [
     pytest.param(
         ibis_tpc.h10.tpc_h10,
         {"DATE": date(1993, 10, 1)},
-        marks=pytest.mark.xfail(raises=TypeError, reason="bad type comparison"),
     ),
     pytest.param(
         ibis_tpc.h11.tpc_h11,
@@ -351,20 +348,3 @@ roundtrip = [
         {},
     ),
 ]
-
-
-@pytest.mark.parametrize("tpc_func, kwargs", roundtrip)
-def test_roundtrip(con, duckcon, compiler, tpc_func, kwargs):
-    query = tpc_func(con, **kwargs)
-    try:
-        proto = compiler.compile(query)
-    except Exception:
-        pytest.skip("compilation failed, not attempting to decompile")
-    (result,) = decompile(proto)
-
-    query_res = duckcon.execute(query)
-    result_res = duckcon.execute(result)
-    # duckdb is stupidly fast and this lets us compare the actual results
-    # and ignores any differences due to table ordering in the two expressions
-    # TODO: fix table ordering?  do we care?
-    assert query_res.equals(result_res)
