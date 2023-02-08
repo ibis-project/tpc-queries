@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import datetime
 import glob
 import itertools
 import json
@@ -7,6 +8,7 @@ import math
 import os
 import time
 import warnings
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -48,6 +50,10 @@ def out_jsonl(rows: List[Dict[str, Any]], outdir, fn):
     class DateEncoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, pandas.Timestamp):
+                return str(obj)
+            elif isinstance(obj, Decimal):
+                return float(obj)
+            elif isinstance(obj, datetime.date):
                 return str(obj)
             return json.JSONEncoder.default(self, obj)
 
@@ -324,6 +330,18 @@ def compare(rows1, rows2):
                 diffs.append(diff)
 
     return diffs
+
+
+@dispatch(Decimal, float)
+def _compare(v1, v2, row=None, key=None):
+    v1 = float(v1)
+    return _compare(v1, v2, row=row, key=key)
+
+
+@dispatch(float, Decimal)
+def _compare(v1, v2, row=None, key=None):
+    v2 = float(v2)
+    return _compare(v1, v2, row=row, key=key)
 
 
 @dispatch(pandas.Timestamp, pandas.Timestamp)
