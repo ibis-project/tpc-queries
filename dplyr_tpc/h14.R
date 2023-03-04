@@ -1,7 +1,7 @@
 tpc_h14 <- function(input_func, collect_func = dplyr::collect) {
   input_func("lineitem") %>%
     filter(
-      l_shipdate >= as.Date("1995-01-01"),
+      l_shipdate >= as.Date("1995-09-01"),
       l_shipdate < as.Date("1995-10-01")
     ) %>%
     inner_join(input_func("part"), by = c("l_partkey" = "p_partkey")) %>%
