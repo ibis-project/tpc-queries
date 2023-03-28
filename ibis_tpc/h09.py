@@ -35,5 +35,5 @@ def tpc_h09(con, COLOR="green"):
 
     gq = q.group_by([q.nation, q.o_year])
     q = gq.aggregate(sum_profit=q.amount.sum())
-    q = q.sort_by([q.nation, ibis.desc(q.o_year)])
+    q = q.order_by([q.nation, ibis.desc(q.o_year)])
     return q

@@ -48,7 +48,7 @@ def tpc_h02(con, REGION="EUROPE", SIZE=25, TYPE="BRASS"):
         ]
     )
 
-    return q.sort_by(
+    return q.order_by(
         [
             ibis.desc(q.s_acctbal),
             q.n_name,

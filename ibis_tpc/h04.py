@@ -18,5 +18,5 @@ def tpc_h04(con, DATE="1993-07-01"):
     )
     q = q.group_by([orders.o_orderpriority])
     q = q.aggregate(order_count=orders.count())
-    q = q.sort_by([orders.o_orderpriority])
+    q = q.order_by([orders.o_orderpriority])
     return q

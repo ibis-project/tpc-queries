@@ -33,5 +33,5 @@ def tpc_h01(con, DELTA=90, DATE="1998-12-01"):
         avg_disc=t.l_discount.mean(),
         count_order=t.count(),
     )
-    q = q.sort_by(["l_returnflag", "l_linestatus"])
+    q = q.order_by(["l_returnflag", "l_linestatus"])
     return q

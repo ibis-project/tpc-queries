@@ -35,5 +35,5 @@ def tpc_h10(con, DATE="1993-10-01"):
     )
     q = gq.aggregate(revenue=(q.l_extendedprice * (1 - q.l_discount)).sum())
 
-    q = q.sort_by(ibis.desc(q.revenue))
+    q = q.order_by(ibis.desc(q.revenue))
     return q.limit(20)

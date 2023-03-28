@@ -40,6 +40,6 @@ def tpc_h12(con, SHIPMODE1="MAIL", SHIPMODE2="SHIP", DATE="1994-01-01"):
             .end()
         ).sum(),
     )
-    q = q.sort_by(q.l_shipmode)
+    q = q.order_by(q.l_shipmode)
 
     return q

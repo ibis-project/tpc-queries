@@ -16,7 +16,7 @@ def tpc_h03(con, MKTSEGMENT="BUILDING", DATE="1995-03-15"):
     )
     qg = q.group_by([q.l_orderkey, q.o_orderdate, q.o_shippriority])
     q = qg.aggregate(revenue=(q.l_extendedprice * (1 - q.l_discount)).sum())
-    q = q.sort_by([ibis.desc(q.revenue), q.o_orderdate])
+    q = q.order_by([ibis.desc(q.revenue), q.o_orderdate])
     q = q.limit(10)
 
     return q

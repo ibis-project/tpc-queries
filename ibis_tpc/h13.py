@@ -21,5 +21,5 @@ def tpc_h13(con, WORD1="special", WORD2="requests"):
     gq = innerq.group_by([innerq.c_count])
     q = gq.aggregate(custdist=innerq.count())
 
-    q = q.sort_by([ibis.desc(q.custdist), ibis.desc(q.c_count)])
+    q = q.order_by([ibis.desc(q.custdist), ibis.desc(q.c_count)])
     return q

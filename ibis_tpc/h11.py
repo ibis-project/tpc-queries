@@ -21,5 +21,5 @@ def tpc_h11(con, NATION="GERMANY", FRACTION=0.0001):
     gq = q.group_by([q.ps_partkey])
     q = gq.aggregate(value=(q.ps_supplycost * q.ps_availqty).sum())
     q = q.filter([q.value > innerq.total * FRACTION])
-    q = q.sort_by(ibis.desc(q.value))
+    q = q.order_by(ibis.desc(q.value))
     return q
