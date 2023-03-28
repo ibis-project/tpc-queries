@@ -23,5 +23,5 @@ def tpc_h18(con, QUANTITY=300):
 
     gq = q.groupby([q.c_name, q.c_custkey, q.o_orderkey, q.o_orderdate, q.o_totalprice])
     q = gq.aggregate(sum_qty=q.l_quantity.sum())
-    q = q.sort_by([ibis.desc(q.o_totalprice), q.o_orderdate])
+    q = q.order_by([ibis.desc(q.o_totalprice), q.o_orderdate])
     return q.limit(100)

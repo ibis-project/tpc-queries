@@ -39,4 +39,4 @@ def tpc_h20(con, COLOR="forest", DATE="1994-01-01", NATION="CANADA"):
 
     q1 = q1[q1.s_name, q1.s_address]
 
-    return q1.sort_by(q1.s_name)
+    return q1.order_by(q1.s_name)

@@ -46,5 +46,5 @@ def tpc_h21(con, NATION="SAUDI ARABIA"):
 
     gq = q.group_by([q.s_name])
     q = gq.aggregate(numwait=q.count())
-    q = q.sort_by([ibis.desc(q.numwait), q.s_name])
+    q = q.order_by([ibis.desc(q.numwait), q.s_name])
     return q.limit(100)

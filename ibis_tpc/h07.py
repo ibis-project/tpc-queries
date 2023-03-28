@@ -39,6 +39,6 @@ def tpc_h07(con, NATION1="FRANCE", NATION2="GERMANY", DATE="1995-01-01"):
 
     gq = q.group_by(["supp_nation", "cust_nation", "l_year"])
     q = gq.aggregate(revenue=q.volume.sum())
-    q = q.sort_by(["supp_nation", "cust_nation", "l_year"])
+    q = q.order_by(["supp_nation", "cust_nation", "l_year"])
 
     return q

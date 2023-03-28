@@ -52,5 +52,5 @@ def tpc_h08(
     )
     gq = q.group_by([q.o_year])
     q = gq.aggregate(mkt_share=q.nation_volume.sum() / q.volume.sum())
-    q = q.sort_by([q.o_year])
+    q = q.order_by([q.o_year])
     return q

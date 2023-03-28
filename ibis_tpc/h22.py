@@ -29,4 +29,4 @@ def tpc_h22(con, COUNTRY_CODES=("13", "31", "23", "29", "30", "18", "17")):
     gq = custsale.group_by(custsale.cntrycode)
     outerq = gq.aggregate(numcust=custsale.count(), totacctbal=custsale.c_acctbal.sum())
 
-    return outerq.sort_by(outerq.cntrycode)
+    return outerq.order_by(outerq.cntrycode)

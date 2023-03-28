@@ -30,5 +30,5 @@ def tpc_h05(con, NAME="ASIA", DATE="1994-01-01"):
     revexpr = q.l_extendedprice * (1 - q.l_discount)
     gq = q.group_by([q.n_name])
     q = gq.aggregate(revenue=revexpr.sum())
-    q = q.sort_by([ibis.desc(q.revenue)])
+    q = q.order_by([ibis.desc(q.revenue)])
     return q

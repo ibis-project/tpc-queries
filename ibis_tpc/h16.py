@@ -32,5 +32,5 @@ def tpc_h16(
     )
     gq = q.groupby([q.p_brand, q.p_type, q.p_size])
     q = gq.aggregate(supplier_cnt=q.ps_suppkey.nunique())
-    q = q.sort_by([ibis.desc(q.supplier_cnt), q.p_brand, q.p_type, q.p_size])
+    q = q.order_by([ibis.desc(q.supplier_cnt), q.p_brand, q.p_type, q.p_size])
     return q
