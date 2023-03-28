@@ -31,7 +31,13 @@ class TPCHBackend(BaseBackend):  # noqa: D101
     def create_table(self, *args, **kwargs):  # noqa: D102
         ...
 
+    def drop_table(self, *args, **kwargs):  # noqa: D102
+        ...
+
     def create_view(self, *args, **kwargs):  # noqa: D102
+        ...
+
+    def drop_view(self, *args, **kwargs):  # noqa: D102
         ...
 
     def current_database(self):  # noqa: D102
