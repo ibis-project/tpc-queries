@@ -1,5 +1,6 @@
 import importlib
 from datetime import date
+import packaging.version as vparse
 
 import duckdb
 import ibis_tpc
@@ -46,9 +47,18 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h07.tpc_h07,
         {"DATE": date(1995, 1, 1)},
-        marks=pytest.mark.xfail(
-            raises=RuntimeError, reason="DuckDB cannot load substrait plan"
-        ),
+        marks=[
+            pytest.mark.xfail(
+                condition=vparse.parse(duckdb.__version__) > vparse.parse("0.7.1"),
+                raises=duckdb.InternalException,
+                reason="Unsupported expression type 0",
+            ),
+            pytest.mark.xfail(
+                condition=vparse.parse(duckdb.__version__) <= vparse.parse("0.7.1"),
+                raises=RuntimeError,
+                reason="DuckDB fails to load Substrait Plan",
+            ),
+        ],
     ),
     pytest.param(
         ibis_tpc.h08.tpc_h08,
@@ -80,7 +90,9 @@ serialize_deserialize = [
         ibis_tpc.h13.tpc_h13,
         {},
         marks=pytest.mark.xfail(
-            raises=duckdb.CatalogException, reason="duckdb no scalar function 'not'"
+            condition=vparse.parse(duckdb.__version__) <= vparse.parse("0.7.1"),
+            raises=duckdb.CatalogException,
+            reason="duckdb no scalar function 'not'",
         ),
     ),
     pytest.param(
@@ -102,7 +114,8 @@ serialize_deserialize = [
         ibis_tpc.h16.tpc_h16,
         {},
         marks=pytest.mark.xfail(
-            raises=duckdb.CatalogException, reason="scalar function 'not'"
+            raises=ValueError,
+            reason="count_distinct not implemented correctly upstream",
         ),
     ),
     pytest.param(
@@ -216,6 +229,9 @@ serialize = [
     pytest.param(
         ibis_tpc.h16.tpc_h16,
         {},
+        marks=pytest.mark.xfail(
+            raises=ValueError, reason="count_distinct handled incorrectly upstream"
+        ),
     ),
     pytest.param(
         ibis_tpc.h17.tpc_h17,
