@@ -12,7 +12,7 @@ def tpc_h18(con, QUANTITY=300):
     orders = con.table("orders")
     lineitem = con.table("lineitem")
 
-    subgq = lineitem.groupby([lineitem.l_orderkey])
+    subgq = lineitem.group_by([lineitem.l_orderkey])
     subq = subgq.aggregate(qty_sum=lineitem.l_quantity.sum())
     subq = subq.filter([subq.qty_sum > QUANTITY])
 
@@ -21,7 +21,9 @@ def tpc_h18(con, QUANTITY=300):
     q = q.join(lineitem, orders.o_orderkey == lineitem.l_orderkey)
     q = q.filter([q.o_orderkey.isin(subq.l_orderkey)])
 
-    gq = q.groupby([q.c_name, q.c_custkey, q.o_orderkey, q.o_orderdate, q.o_totalprice])
+    gq = q.group_by(
+        [q.c_name, q.c_custkey, q.o_orderkey, q.o_orderdate, q.o_totalprice]
+    )
     q = gq.aggregate(sum_qty=q.l_quantity.sum())
     q = q.order_by([ibis.desc(q.o_totalprice), q.o_orderdate])
     return q.limit(100)
