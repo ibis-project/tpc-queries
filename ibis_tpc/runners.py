@@ -128,7 +128,6 @@ class DuckDBRunner(Runner):
     def setup(self, db="tpch.ddb"):
         super().setup(db=db)
         import duckdb
-        from ibis_substrait.compiler.core import SubstraitCompiler
 
         self.con = duckdb.connect(db)
 
@@ -194,9 +193,6 @@ class SubstraitRunner(Runner):
         except Exception:
             raise ValueError("can't compile")
 
-        # The self.con.con here points to the underlying DuckDB connection
-        self.con.con.execute("install substrait")
-        self.con.con.execute("load substrait")
         results = self.con.con.from_substrait(proto.SerializeToString())
         rows = results.to_df()
         t2 = time.time()
