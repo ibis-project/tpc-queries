@@ -6,14 +6,14 @@ from ibis.backends.base import BaseBackend
 
 
 class TPCHBackend(BaseBackend):  # noqa: D101
-    def __init__(self, fname="", scale_factor=0.1):  # noqa: D107
+    def __init__(self, fname="", scale_factor=0.2):  # noqa: D107
         if fname:
             con = ibis.duckdb.connect(fname)
         else:
             con = ibis.duckdb.connect()
 
         if not fname:
-            con.raw_sql(f"CALL dbgen(sf={scale_factor})")
+            con.raw_sql("CALL dbgen(sf=0)")
 
         self.tables = {
             name: con.tables.get(name).unbind() for name in con.list_tables()
@@ -23,7 +23,9 @@ class TPCHBackend(BaseBackend):  # noqa: D101
         self.con = duckdb.connect(fname)
         self.con.install_extension("substrait")
         self.con.load_extension("substrait")
-        self.con.execute(f"CALL dbgen(sf={scale_factor})")
+        if not fname:
+            self.con.execute(f"CALL dbgen(sf={scale_factor})")
+            # sf ~< 0.17 won't necessarily generate any results for certain queries
 
     def table(self, table):  # noqa: D102
         return self.tables.get(table)
