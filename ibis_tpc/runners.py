@@ -38,14 +38,6 @@ def out_txt(s, outdir, fn):
             print(s, file=f, flush=True)
 
 
-def out_sql(sql, outdir, fn):
-    import sqlparse
-
-    sql = sqlparse.format(str(sql), reindent=True, keyword_case="upper")
-
-    out_txt(sql, outdir, fn)
-
-
 def out_jsonl(rows: List[Dict[str, Any]], outdir, fn):
     class DateEncoder(json.JSONEncoder):
         def default(self, obj):
@@ -156,14 +148,10 @@ class IbisRunner(Runner):
 
         out_txt(repr(q), outdir, f"{qid}-{self.interface}-{self.backend}-expr.txt")
 
-        boundsql = q.compile().compile(compile_kwargs=dict(literal_binds=True))
-        out_sql(
-            q.compile(), outdir, f"{qid}-{self.interface}-{self.backend}-compiled.sql"
-        )
-        out_sql(
-            boundsql,
+        out_txt(
+            str(ibis.to_sql(q)),
             outdir,
-            f"{qid}-{self.interface}-{self.backend}-compiled-twice.sql",
+            f"{qid}-{self.interface}-{self.backend}-compiled.sql",
         )
 
         t1 = time.time()
@@ -224,7 +212,7 @@ class SqlAlchemyRunner(Runner):
         q = getattr(mod, f"tpc_{qid}")(self)
 
         sql = q.compile(self.engine, compile_kwargs=dict(literal_binds=True))
-        out_sql(sql, outdir, f"{qid}-{self.interface}-{self.backend}-compiled.sql")
+        out_txt(sql, outdir, f"{qid}-{self.interface}-{self.backend}-compiled.sql")
 
         t1 = time.time()
         rows = q.execute()
@@ -286,7 +274,7 @@ class RRunner(Runner):
         func = rpy2.robjects.globalenv[f"tpc_{qid}"]
 
         sql = self.query_sql(self.con, func)[0]
-        out_sql(sql, outdir, f"{qid}-{self.interface}-{self.backend}.sql")
+        out_txt(sql, outdir, f"{qid}-{self.interface}-{self.backend}.sql")
 
         t1 = time.time()
         res = rpy2.robjects.globalenv["query_" + self.interface](self.con, func)
