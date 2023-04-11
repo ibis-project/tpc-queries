@@ -49,11 +49,6 @@ serialize_deserialize = [
         {"DATE": date(1995, 1, 1)},
         marks=[
             pytest.mark.xfail(
-                condition=vparse.parse(duckdb.__version__) > vparse.parse("0.7.1"),
-                raises=duckdb.InternalException,
-                reason="Unsupported expression type 0",
-            ),
-            pytest.mark.xfail(
                 condition=vparse.parse(duckdb.__version__) <= vparse.parse("0.7.1"),
                 raises=RuntimeError,
                 reason="DuckDB fails to load Substrait Plan",
@@ -70,9 +65,6 @@ serialize_deserialize = [
     pytest.param(
         ibis_tpc.h09.tpc_h09,
         {},
-        marks=pytest.mark.xfail(
-            reason="duckdb INTERNAL Error: Substrait type not yet supported"
-        ),
     ),
     pytest.param(
         ibis_tpc.h10.tpc_h10,
