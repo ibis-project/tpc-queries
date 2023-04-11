@@ -330,13 +330,13 @@ def compare(rows1, rows2):
 
 @dispatch(Decimal, float)
 def _compare(v1, v2, row=None, key=None):
-    v1 = float(v1)
+    v2 = Decimal(v2)
     return _compare(v1, v2, row=row, key=key)
 
 
 @dispatch(float, Decimal)
 def _compare(v1, v2, row=None, key=None):
-    v2 = float(v2)
+    v1 = Decimal(v1)
     return _compare(v1, v2, row=row, key=key)
 
 
