@@ -334,6 +334,18 @@ def _compare(v1, v2, row=None, key=None):
         return f"[{row}].{key} (date) {v1} != {v2}"
 
 
+@dispatch(pandas.Timestamp, datetime.date)
+def _compare(v1, v2, row=None, key=None):
+    if v1.date() != v2:
+        return f"[{row}].{key} (date) {v1} != {v2}"
+
+
+@dispatch(datetime.date, pandas.Timestamp)
+def _compare(v1, v2, row=None, key=None):
+    if v1 != v2.date():
+        return f"[{row}].{key} (date) {v1} != {v2}"
+
+
 @dispatch(str, pandas.Timestamp)
 def _compare(v1, v2, row=None, key=None):  # noqa: F811
     v1 = pandas.to_datetime(v1)
