@@ -4,7 +4,6 @@ pandas
 ibis-framework[sqlite,duckdb]
 ibis-substrait
 pyarrow>=9.0.0
-sqlparse
 python-dateutil
 duckdb>=0.4.0
 duckdb-engine
