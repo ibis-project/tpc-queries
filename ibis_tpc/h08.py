@@ -40,7 +40,7 @@ def tpc_h08(
     q = q.filter(
         [
             q.r_name == REGION,
-            q.o_orderdate.between(ibis.date(DATE), ibis.date(DATE)
+            q.o_orderdate.cast("date").between(ibis.date(DATE), ibis.date(DATE)
             + ibis.interval(years=2) - ibis.interval(days=1)),
             q.p_type == TYPE,
         ]

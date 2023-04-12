@@ -18,8 +18,9 @@ def tpc_h12(con, SHIPMODE1="MAIL", SHIPMODE2="SHIP", DATE="1994-01-01"):
             q.l_shipmode.isin([SHIPMODE1, SHIPMODE2]),
             q.l_commitdate < q.l_receiptdate,
             q.l_shipdate < q.l_commitdate,
-            q.l_receiptdate >= DATE,
-            q.l_receiptdate < ibis.date(DATE) + ibis.interval(years=1),
+            q.l_receiptdate.cast("date") >= ibis.date(DATE),
+            q.l_receiptdate.cast("date") < ibis.date(DATE)
+            + ibis.interval(years=1),
         ]
     )
 

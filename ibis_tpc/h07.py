@@ -33,7 +33,7 @@ def tpc_h07(con, NATION1="FRANCE", NATION2="GERMANY", DATE="1995-01-01"):
         [
             ((q.cust_nation == NATION1) & (q.supp_nation == NATION2))
             | ((q.cust_nation == NATION2) & (q.supp_nation == NATION1)),
-            q.l_shipdate.between(ibis.date(DATE), ibis.date(DATE)
+            q.l_shipdate.cast("date").between(ibis.date(DATE), ibis.date(DATE)
             + ibis.interval(years=2) - ibis.interval(days=1)),
         ]
     )

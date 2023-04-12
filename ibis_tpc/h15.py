@@ -10,8 +10,9 @@ def tpc_h15(con, DATE="1996-01-01"):
     qrev = lineitem
     qrev = qrev.filter(
         [
-            lineitem.l_shipdate >= ibis.date(DATE),
-            lineitem.l_shipdate < ibis.date(DATE) + ibis.interval(months=3)
+            lineitem.l_shipdate.cast("date") >= ibis.date(DATE),
+            lineitem.l_shipdate.cast("date") < ibis.date(DATE)
+            + ibis.interval(months=3)
         ]
     )
 
