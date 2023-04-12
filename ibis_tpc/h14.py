@@ -1,4 +1,4 @@
-from .utils import add_date
+import ibis
 
 
 def tpc_h14(con, DATE="1995-09-01"):
@@ -11,7 +11,12 @@ def tpc_h14(con, DATE="1995-09-01"):
     part = con.table("part")
     q = lineitem
     q = q.join(part, lineitem.l_partkey == part.p_partkey)
-    q = q.filter([q.l_shipdate >= DATE, q.l_shipdate < add_date(DATE, dm=1)])
+    q = q.filter(
+        [
+            q.l_shipdate >= ibis.date(DATE),
+            q.l_shipdate < ibis.date(DATE) + ibis.interval(months=1)
+        ]
+    )
 
     revenue = q.l_extendedprice * (1 - q.l_discount)
     promo_revenue = q.p_type.like("PROMO%").ifelse(revenue, 0)

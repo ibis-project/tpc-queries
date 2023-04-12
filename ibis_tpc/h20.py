@@ -1,4 +1,4 @@
-from .utils import add_date
+import ibis
 
 
 def tpc_h20(con, COLOR="forest", DATE="1994-01-01", NATION="CANADA"):
@@ -24,7 +24,7 @@ def tpc_h20(con, COLOR="forest", DATE="1994-01-01", NATION="CANADA"):
             lineitem.l_partkey == q2.ps_partkey,
             lineitem.l_suppkey == q2.ps_suppkey,
             lineitem.l_shipdate >= DATE,
-            lineitem.l_shipdate < add_date(DATE, dy=1),
+            lineitem.l_shipdate < ibis.date(DATE) + ibis.interval(years=1),
         ]
     )
 

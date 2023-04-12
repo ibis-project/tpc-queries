@@ -1,4 +1,4 @@
-from .utils import add_date
+import ibis
 
 
 def tpc_h15(con, DATE="1996-01-01"):
@@ -9,7 +9,10 @@ def tpc_h15(con, DATE="1996-01-01"):
 
     qrev = lineitem
     qrev = qrev.filter(
-        [lineitem.l_shipdate >= DATE, lineitem.l_shipdate < add_date(DATE, dm=3)]
+        [
+            lineitem.l_shipdate >= ibis.date(DATE),
+            lineitem.l_shipdate < ibis.date(DATE) + ibis.interval(months=3)
+        ]
     )
 
     gqrev = qrev.group_by([lineitem.l_suppkey])

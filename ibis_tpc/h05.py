@@ -2,9 +2,6 @@
 
 import ibis
 
-from .utils import add_date
-
-
 def tpc_h05(con, NAME="ASIA", DATE="1994-01-01"):
     customer = con.table("customer")
     orders = con.table("orders")
@@ -25,7 +22,11 @@ def tpc_h05(con, NAME="ASIA", DATE="1994-01-01"):
     q = q.join(region, nation.n_regionkey == region.r_regionkey)
 
     q = q.filter(
-        [q.r_name == NAME, q.o_orderdate >= DATE, q.o_orderdate < add_date(DATE, dy=1)]
+        [
+            q.r_name == NAME,
+            q.o_orderdate >= ibis.date(DATE),
+            q.o_orderdate < ibis.date(DATE) + ibis.interval(years=1)
+        ]
     )
     revexpr = q.l_extendedprice * (1 - q.l_discount)
     gq = q.group_by([q.n_name])
