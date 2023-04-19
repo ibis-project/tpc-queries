@@ -1,6 +1,6 @@
 "Volume Shipping Query (Q7)"
 
-from .utils import add_date
+import ibis
 
 
 def tpc_h07(con, NATION1="FRANCE", NATION2="GERMANY", DATE="1995-01-01"):
@@ -33,7 +33,8 @@ def tpc_h07(con, NATION1="FRANCE", NATION2="GERMANY", DATE="1995-01-01"):
         [
             ((q.cust_nation == NATION1) & (q.supp_nation == NATION2))
             | ((q.cust_nation == NATION2) & (q.supp_nation == NATION1)),
-            q.l_shipdate.between(DATE, add_date(DATE, dy=2, dd=-1)),
+            q.l_shipdate.between(ibis.date(DATE), ibis.date(DATE)
+            + ibis.interval(years=2) - ibis.interval(days=1)),
         ]
     )
 

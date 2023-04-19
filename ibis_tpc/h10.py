@@ -1,7 +1,6 @@
 "Returned Item Reporting Query (Q10)"
 
 import ibis
-from .utils import add_date
 
 
 def tpc_h10(con, DATE="1993-10-01"):
@@ -17,7 +16,9 @@ def tpc_h10(con, DATE="1993-10-01"):
 
     q = q.filter(
         [
-            (q.o_orderdate >= DATE) & (q.o_orderdate < add_date(DATE, dm=3)),
+            (q.o_orderdate >= ibis.date(DATE))
+            & (q.o_orderdate < ibis.date(DATE)
+            + ibis.interval(months=3)),
             q.l_returnflag == "R",
         ]
     )

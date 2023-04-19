@@ -1,6 +1,6 @@
 "Order Priority Checking Query (Q4)"
 
-from .utils import add_date
+import ibis
 
 
 def tpc_h04(con, DATE="1993-07-01"):
@@ -12,8 +12,9 @@ def tpc_h04(con, DATE="1993-07-01"):
     q = orders.filter(
         [
             cond.any(),
-            orders.o_orderdate >= DATE,
-            orders.o_orderdate < add_date(DATE, dm=3),
+            orders.o_orderdate >= ibis.date(DATE),
+            orders.o_orderdate < ibis.date(DATE)
+            + ibis.interval(months=3),
         ]
     )
     q = q.group_by([orders.o_orderpriority])

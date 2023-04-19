@@ -2,8 +2,6 @@
 
 import ibis
 
-from .utils import add_date
-
 
 def tpc_h08(
     con,
@@ -42,7 +40,8 @@ def tpc_h08(
     q = q.filter(
         [
             q.r_name == REGION,
-            q.o_orderdate.between(DATE, add_date(DATE, dy=2, dd=-1)),
+            q.o_orderdate.between(ibis.date(DATE), ibis.date(DATE)
+            + ibis.interval(years=2) - ibis.interval(days=1)),
             q.p_type == TYPE,
         ]
     )
