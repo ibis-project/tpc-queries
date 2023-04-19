@@ -19,7 +19,7 @@ def tpc_h01(con, DELTA=90, DATE="1998-12-01"):
     t = con.table("lineitem")
 
     q = t.filter(
-        t.l_shipdate.cast("date") <= ibis.date(DATE) - ibis.interval(days=DELTA)
+        t.l_shipdate <= ibis.date(DATE) - ibis.interval(days=DELTA)
     )
     discount_price = t.l_extendedprice * (1 - t.l_discount)
     charge = discount_price * (1 + t.l_tax)

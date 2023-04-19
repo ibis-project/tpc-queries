@@ -24,8 +24,8 @@ def tpc_h05(con, NAME="ASIA", DATE="1994-01-01"):
     q = q.filter(
         [
             q.r_name == NAME,
-            q.o_orderdate.cast("date") >= ibis.date(DATE),
-            q.o_orderdate.cast("date") < ibis.date(DATE)
+            q.o_orderdate >= ibis.date(DATE),
+            q.o_orderdate < ibis.date(DATE)
             + ibis.interval(years=1)
         ]
     )

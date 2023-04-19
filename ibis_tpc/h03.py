@@ -14,8 +14,8 @@ def tpc_h03(con, MKTSEGMENT="BUILDING", DATE="1995-03-15"):
     q = q.filter(
         [
             q.c_mktsegment == MKTSEGMENT,
-            q.o_orderdate.cast("date") < ibis.date(DATE),
-            q.l_shipdate.cast("date") > ibis.date(DATE)
+            q.o_orderdate < ibis.date(DATE),
+            q.l_shipdate > ibis.date(DATE)
         ]
     )
     qg = q.group_by([q.l_orderkey, q.o_orderdate, q.o_shippriority])

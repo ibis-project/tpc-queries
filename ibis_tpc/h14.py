@@ -13,8 +13,8 @@ def tpc_h14(con, DATE="1995-09-01"):
     q = q.join(part, lineitem.l_partkey == part.p_partkey)
     q = q.filter(
         [
-            q.l_shipdate.cast("date") >= ibis.date(DATE),
-            q.l_shipdate.cast("date") < ibis.date(DATE) + ibis.interval(months=1)
+            q.l_shipdate >= ibis.date(DATE),
+            q.l_shipdate < ibis.date(DATE) + ibis.interval(months=1)
         ]
     )
 

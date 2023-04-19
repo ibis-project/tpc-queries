@@ -9,8 +9,8 @@ def tpc_h06(con, DATE="1994-01-01", DISCOUNT=0.06, QUANTITY=24):
     discount_max = round(DISCOUNT + 0.01, 2)
     q = q.filter(
         [
-            q.l_shipdate.cast("date") >= ibis.date(DATE),
-            q.l_shipdate.cast("date") < ibis.date(DATE)
+            q.l_shipdate >= ibis.date(DATE),
+            q.l_shipdate < ibis.date(DATE)
             + ibis.interval(years=1),
             q.l_discount.between(discount_min, discount_max),
             q.l_quantity < QUANTITY,
